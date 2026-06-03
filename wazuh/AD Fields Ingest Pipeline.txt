@@ -1,0 +1,397 @@
+## see the "Hook" (The Connection)
+GET _ingest/pipeline/filebeat-7.10.2-wazuh-alerts-pipeline
+
+{
+  "filebeat-7.10.2-wazuh-alerts-pipeline": {
+    "description": "Wazuh alerts pipeline with AD Enrichment Hook",
+    "processors": [
+      {
+        "json": {
+          "field": "message",
+          "add_to_root": true
+        }
+      },
+      {
+        "pipeline": {
+          "name": "ad_enrichment"
+        }
+      },
+      {
+        "set": {
+          "field": "data.aws.region",
+          "value": "{{data.aws.awsRegion}}",
+          "override": false,
+          "ignore_failure": true,
+          "ignore_empty_value": true
+        }
+      },
+      {
+        "set": {
+          "ignore_empty_value": true,
+          "field": "data.aws.accountId",
+          "value": "{{data.aws.aws_account_id}}",
+          "override": false,
+          "ignore_failure": true
+        }
+      },
+      {
+        "geoip": {
+          "target_field": "GeoLocation",
+          "properties": [
+            "city_name",
+            "country_name",
+            "region_name",
+            "location"
+          ],
+          "ignore_missing": true,
+          "ignore_failure": true,
+          "field": "data.srcip"
+        }
+      },
+      {
+        "geoip": {
+          "field": "data.win.eventdata.ipAddress",
+          "target_field": "GeoLocation",
+          "properties": [
+            "city_name",
+            "country_name",
+            "region_name",
+            "location"
+          ],
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "geoip": {
+          "ignore_missing": true,
+          "ignore_failure": true,
+          "field": "data.aws.sourceIPAddress",
+          "target_field": "GeoLocation",
+          "properties": [
+            "city_name",
+            "country_name",
+            "region_name",
+            "location"
+          ]
+        }
+      },
+      {
+        "geoip": {
+          "ignore_failure": true,
+          "field": "data.aws.client_ip",
+          "target_field": "GeoLocation",
+          "properties": [
+            "city_name",
+            "country_name",
+            "region_name",
+            "location"
+          ],
+          "ignore_missing": true
+        }
+      },
+      {
+        "geoip": {
+          "field": "data.aws.service.action.networkConnectionAction.remoteIpDetails.ipAddressV4",
+          "target_field": "GeoLocation",
+          "properties": [
+            "city_name",
+            "country_name",
+            "region_name",
+            "location"
+          ],
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "geoip": {
+          "field": "data.aws.httpRequest.clientIp",
+          "target_field": "GeoLocation",
+          "properties": [
+            "city_name",
+            "country_name",
+            "region_name",
+            "location"
+          ],
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "geoip": {
+          "ignore_failure": true,
+          "field": "data.gcp.jsonPayload.sourceIP",
+          "target_field": "GeoLocation",
+          "properties": [
+            "city_name",
+            "country_name",
+            "region_name",
+            "location"
+          ],
+          "ignore_missing": true
+        }
+      },
+      {
+        "geoip": {
+          "ignore_failure": true,
+          "field": "data.office365.ClientIP",
+          "target_field": "GeoLocation",
+          "properties": [
+            "city_name",
+            "country_name",
+            "region_name",
+            "location"
+          ],
+          "ignore_missing": true
+        }
+      },
+      {
+        "date": {
+          "field": "timestamp",
+          "target_field": "@timestamp",
+          "formats": [
+            "ISO8601"
+          ],
+          "ignore_failure": false
+        }
+      },
+      {
+        "date_index_name": {
+          "index_name_format": "yyyy.MM.dd",
+          "ignore_failure": false,
+          "field": "timestamp",
+          "date_rounding": "d",
+          "index_name_prefix": "{{fields.index_prefix}}"
+        }
+      },
+      {
+        "remove": {
+          "field": "message",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "field": "ecs",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "field": "beat",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "field": "input_type",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "ignore_failure": true,
+          "field": "tags",
+          "ignore_missing": true
+        }
+      },
+      {
+        "remove": {
+          "field": "count",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "ignore_failure": true,
+          "field": "@version",
+          "ignore_missing": true
+        }
+      },
+      {
+        "remove": {
+          "field": "log",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "field": "offset",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "field": "type",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "field": "host",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "field": "fields",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "field": "event",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "field": "fileset",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      },
+      {
+        "remove": {
+          "field": "service",
+          "ignore_missing": true,
+          "ignore_failure": true
+        }
+      }
+    ],
+    "on_failure": [
+      {
+        "drop": {}
+      }
+    ]
+  }
+}
+
+## see the "Logic" (The AD Rules)
+GET _ingest/pipeline/ad_enrichment
+
+{
+  "ad_enrichment": {
+    "description": "AD Labels: Added 116292, 116293 (User Modified)",
+    "processors": [
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116302','116301','116296','116298','115702','115705','116297','116299','116295','116450','116294','116292','116293'].contains(ctx.rule.id.toString())",
+          "field": "ad_object",
+          "value": "user"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116304','116306','116305','115701','115704','116453'].contains(ctx.rule.id.toString())",
+          "field": "ad_object",
+          "value": "computer"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116308','116322','116323','116326','116314','116307','116319','116321','116327','116313','116309','116324','116325','116328','116315','116311','116330','116331','116332','116317','116312','116335','116318','116454','116447','116448','116449'].contains(ctx.rule.id.toString())",
+          "field": "ad_object",
+          "value": "group"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116451','116452'].contains(ctx.rule.id.toString())",
+          "field": "ad_object",
+          "value": "ou"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116302','116304','116308','116307','116309','116311','116312','116451'].contains(ctx.rule.id.toString())",
+          "field": "ad_action",
+          "value": "created"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116301','116306','116314','116313','116315','116317','116318','116452','116449'].contains(ctx.rule.id.toString())",
+          "field": "ad_action",
+          "value": "deleted"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116322','116319','116324','116330','116447'].contains(ctx.rule.id.toString())",
+          "field": "ad_action",
+          "value": "added"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116323','116321','116325','116331','116448'].contains(ctx.rule.id.toString())",
+          "field": "ad_action",
+          "value": "removed"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116296','116298','116295','116305','116326','116327','116328','116332','116335','116294','116292','116293'].contains(ctx.rule.id.toString())",
+          "field": "ad_action",
+          "value": "modified"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['115702','115701'].contains(ctx.rule.id.toString())",
+          "field": "ad_action",
+          "value": "enabled"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['115705','115704'].contains(ctx.rule.id.toString())",
+          "field": "ad_action",
+          "value": "disabled"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116297'].contains(ctx.rule.id.toString())",
+          "field": "ad_action",
+          "value": "locked"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116299'].contains(ctx.rule.id.toString())",
+          "field": "ad_action",
+          "value": "unlocked"
+        }
+      },
+      {
+        "set": {
+          "if": "ctx.rule != null && ctx.rule instanceof Map && ctx.rule.id != null && ['116450','116453','116454'].contains(ctx.rule.id.toString())",
+          "field": "ad_action",
+          "value": "ou-move"
+        }
+      }
+    ],
+    "on_failure": [
+      {
+        "set": {
+          "field": "ad_enrichment_error",
+          "value": "{{ _ingest.on_failure_message }}"
+        }
+      }
+    ]
+  }
+}

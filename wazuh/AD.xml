@@ -1,0 +1,329 @@
+<group name="ad_refine,windows,">
+
+<!-- ####### Users  -->
+
+
+  <rule id="116295" level="8">
+    <if_sid>60110</if_sid>
+    <field name="win.system.eventID">^4781$</field>
+    <field name="win.eventdata.oldTargetUserName" type="pcre2">.+</field>
+    <field name="win.eventdata.newTargetUserName" type="pcre2">.+</field>
+    <description>AD: User Account Name Changed</description>
+  </rule>
+
+  <rule id="116296" level="8">
+    <if_sid>60110</if_sid>
+    <field name="win.system.eventID">^4738$</field>
+    <field name="win.eventdata.passwordLastSet" type="pcre2">.+</field>
+    <description>AD: User Account Password Reset/Changed</description>
+  </rule>
+
+  <rule id="116297" level="8">
+    <if_sid>60115</if_sid>
+    <field name="win.system.eventID">^4740$</field>
+    <description>AD: User Account Locked Out</description>
+  </rule>
+
+  <rule id="116298" level="8">
+    <if_sid>60110</if_sid>
+    <field name="win.eventdata.scriptPath" type="pcre2">.+</field>
+    <description>AD: User Account Logon Script Changed</description>
+  </rule>
+
+  <rule id="116299" level="8">
+    <if_sid>60133</if_sid>
+    <field name="win.system.eventID">^4767$</field>
+    <description>AD: User Account Unlocked</description>
+  </rule>
+
+  <rule id="116301" level="10">
+    <if_sid>60111</if_sid>
+    <field name="win.system.eventID">^4726$</field>
+    <description>AD: User Account Deleted</description>
+  </rule>
+
+  <rule id="116302" level="10">
+    <if_sid>60109</if_sid>
+    <field name="win.system.eventID">^4720$</field>
+    <description>AD: User Account Created</description>
+  </rule>
+
+<rule id="115700" level="0">
+  <if_sid>60109</if_sid>
+  <field name="win.system.eventID">^4722$</field>
+  <description>AD: Account Enabled (generic)</description>
+</rule>
+
+<rule id="115701" level="7">
+  <if_sid>115700</if_sid>
+  <field name="win.eventdata.targetUserName" type="pcre2">.*\$$</field>
+  <description>AD: Computer Account Enabled</description>
+</rule>
+
+<rule id="115702" level="7">
+  <if_sid>115700</if_sid>
+  <field name="win.eventdata.targetUserName" type="pcre2" negate="yes">.*\$$</field>
+  <description>AD: User Account Enabled</description>
+</rule>
+
+<rule id="115703" level="0">
+  <if_sid>60111</if_sid>
+  <field name="win.system.eventID">^4725$</field>
+  <description>AD: Account Disabled (generic)</description>
+</rule>
+
+<rule id="115704" level="8">
+  <if_sid>115703</if_sid>
+  <field name="win.eventdata.targetUserName" type="pcre2">.*\$$</field>
+  <description>AD: Computer Account Disabled</description>
+</rule>
+
+<rule id="115705" level="8">
+  <if_sid>115703</if_sid>
+  <field name="win.eventdata.targetUserName" type="pcre2" negate="yes">.*\$$</field>
+  <description>AD: User Account Disabled</description>
+</rule>
+
+     <!-- ############################################################### -->
+
+<!-- ####### Computers -->
+
+  <rule id="116304" level="8">
+    <if_sid>60121</if_sid>
+    <field name="win.system.eventID">^4741$</field>
+    <description>AD: Computer Object Created</description>
+  </rule>
+
+  <rule id="116305" level="5">
+    <if_sid>60121</if_sid>
+    <field name="win.system.eventID">^4742$</field>
+    <description>AD: Computer Object Changed</description>
+  </rule>
+
+  <rule id="116306" level="10">
+    <if_sid>60121</if_sid>
+    <field name="win.system.eventID">^4743$</field>
+    <description>AD: Computer Object Deleted</description>
+  </rule>
+
+     <!-- ############################################################### -->
+
+  <!-- Security Groups -->
+  <rule id="116307" level="6">
+    <if_sid>60138</if_sid>
+    <field name="win.system.eventID">^4727$</field>
+    <description>AD: Global Security Group Created</description>
+  </rule>
+
+  <rule id="116308" level="6">
+    <if_sid>60138</if_sid>
+    <field name="win.system.eventID">^4731$</field>
+    <description>AD: Domain Local Security Group Created</description>
+  </rule>
+
+  <rule id="116309" level="6">
+    <if_sid>60138</if_sid>
+    <field name="win.system.eventID">^4754$</field>
+    <description>AD: Universal Security Group Created</description>
+  </rule>
+  
+    <rule id="116319" level="9">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4728$</field>
+    <description>AD: Member Added To Global Security Group</description>
+  </rule>
+
+  <rule id="116321" level="9">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4729$</field>
+    <description>AD: Member Removed From Global Security Group</description>
+  </rule>
+
+  <rule id="116322" level="9">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4732$</field>
+    <description>AD: Member Added To Domain Local Security Group</description>
+  </rule>
+
+  <rule id="116323" level="9">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4733$</field>
+    <description>AD: Member Removed From Domain Local Security Group</description>
+  </rule>
+
+  <rule id="116324" level="9">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4756$</field>
+    <description>AD: Member Added To Universal Security Group</description>
+  </rule>
+
+  <rule id="116325" level="9">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4757$</field>
+    <description>AD: Member Removed From Universal Security Group</description>
+  </rule>
+
+  <rule id="116326" level="6">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4735$</field>
+    <description>AD: Domain Local Security Group Modified</description>
+  </rule>
+
+  <rule id="116327" level="6">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4737$</field>
+    <description>AD: Global Security Group Modified</description>
+  </rule>
+
+  <rule id="116328" level="6">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4755$</field>
+    <description>AD: Universal Security Group Modified</description>
+  </rule>
+  
+    <rule id="116313" level="8">
+    <if_sid>60139</if_sid>
+    <field name="win.system.eventID">^4730$</field>
+    <description>AD: Global Security Group Deleted</description>
+  </rule>
+
+  <rule id="116314" level="8">
+    <if_sid>60139</if_sid>
+    <field name="win.system.eventID">^4734$</field>
+    <description>AD: Domain Local Security Group Deleted</description>
+  </rule>
+
+  <rule id="116315" level="9">
+    <if_sid>60139</if_sid>
+    <field name="win.system.eventID">^4758$</field>
+    <description>AD: Universal Security Group Deleted</description>
+  </rule>
+
+     <!-- ############################################################### -->
+
+  <!-- Distribution Groups -->
+  
+    <rule id="116311" level="5">
+    <if_sid>60138</if_sid>
+    <field name="win.system.eventID">^4744$</field>
+    <description>AD: Domain Local Distribution Group Created</description>
+  </rule>
+  
+    <rule id="116317" level="6">
+    <if_sid>60139</if_sid>
+    <field name="win.system.eventID">^4748$</field>
+    <description>AD: Domain Local Distribution Group Deleted</description>
+  </rule>
+  
+    <rule id="116332" level="5">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4745$</field>
+    <description>AD: Domain Local Distribution Group Modified</description>
+  </rule>
+  
+      <rule id="116330" level="7">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4746$</field>
+    <description>AD: Member Added To Domain Local Distribution Group</description>
+  </rule>
+
+  <rule id="116331" level="7">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4747$</field>
+    <description>AD: Member Removed From Domain Local Distribution Group</description>
+  </rule>
+  
+    <rule id="116312" level="5">
+    <if_sid>60138</if_sid>
+    <field name="win.system.eventID">^4759$</field>
+    <description>AD: Universal Distribution Group Created</description>
+  </rule>
+  
+    <rule id="116335" level="5">
+    <if_sid>60113</if_sid>
+    <field name="win.system.eventID">^4760$</field>
+    <description>AD: Universal Distribution Group Modified</description>
+  </rule>
+  
+    <rule id="116318" level="6">
+    <if_sid>60139</if_sid>
+    <field name="win.system.eventID">^4763$</field>
+    <description>AD: Universal Distribution Group Deleted</description>
+  </rule>
+  
+  <rule id="116449" level="7">
+    <field name="win.system.eventID">^4753$</field>
+    <if_sid>60139</if_sid>
+    <description>AD: Global Distribution Group Deleted</description>
+  </rule>
+  
+   <!-- ############################################################### -->
+  
+<rule id="116450" level="7">
+  <if_sid>60103</if_sid>
+  <field name="win.system.eventID">^5139$</field>
+  <field name="win.eventdata.oldObjectDN" type="pcre2">.+</field>
+  <field name="win.eventdata.newObjectDN" type="pcre2">.+</field>
+  <field name="win.eventdata.objectClass" type="pcre2">^user$</field>
+  <description>AD: User Moved (OU Movement)</description>
+</rule>
+
+<rule id="116453" level="7">
+  <if_sid>60103</if_sid>
+  <field name="win.system.eventID">^5139$</field>
+  <field name="win.eventdata.oldObjectDN" type="pcre2">.+</field>
+  <field name="win.eventdata.newObjectDN" type="pcre2">.+</field>
+  <field name="win.eventdata.objectClass" type="pcre2">^computer$</field>
+  <description>AD: Computer Moved (OU Movement)</description>
+</rule>
+
+<rule id="116454" level="7">
+  <if_sid>60103</if_sid>
+  <field name="win.system.eventID">^5139$</field>
+  <field name="win.eventdata.oldObjectDN" type="pcre2">.+</field>
+  <field name="win.eventdata.newObjectDN" type="pcre2">.+</field>
+  <field name="win.eventdata.objectClass" type="pcre2">^group$</field>
+  <description>AD: Group Moved (OU Movement)</description>
+</rule>
+
+<rule id="116451" level="7">
+  <if_sid>60103</if_sid>
+  <field name="win.system.eventID">^5137$</field>
+  <field name="win.eventdata.objectClass" type="pcre2">^organizationalUnit$</field>
+  <description>AD: OU Created</description>
+</rule>
+<rule id="116452" level="7">
+  <if_sid>60103</if_sid>
+  <field name="win.system.eventID">^5141$</field>
+  <field name="win.eventdata.objectClass" type="pcre2">^organizationalUnit$</field>
+  <description>AD: OU Deleted</description>
+</rule>  
+  
+   <!-- ############################################################### -->
+   
+  <!-- THE RULES ABOVE ARE TESTED AND GOOD TO GO. BELOW STILL NEED ATTENDING TO FIELDS AND SUCH. do not move this line >:( -->
+
+<rule id="116645" level="7">
+  <field name="win.system.eventID">^4749$</field>
+  <description>AD: Global Distribution Group Created</description>
+</rule>
+
+<rule id="116446" level="5">
+  <if_sid>60113</if_sid>
+  <field name="win.system.eventID">^4750$</field>
+  <description>AD: Global Distribution Group Modified</description>
+</rule>
+
+<rule id="116447" level="7">
+  <if_sid>60113</if_sid>
+  <field name="win.system.eventID">^4751$</field>
+  <description>AD: Member Added To Global Distribution Group</description>
+</rule>
+
+<rule id="116448" level="7">
+  <if_sid>60113</if_sid>
+  <field name="win.system.eventID">^4752$</field>
+  <description>AD: Member Removed From Global Distribution Group</description>
+</rule>
+
+</group>
