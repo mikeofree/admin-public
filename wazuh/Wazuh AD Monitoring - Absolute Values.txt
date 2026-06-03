@@ -1,0 +1,181 @@
+# This file reads from the default wazuh windows security rules xml.
+
+
+## Users
+User Creation - 116302
+User Deleted - 116301
+User Password Reset/Changed - 116296
+User Logon Script Changed - 116298
+User Enabled - 115702
+User Disabled - 115705
+User Locked - 116297
+User Unlocked - 116299
+User Email Address Changed - 116294
+User Renamed - 116295
+User UPN Changed - 116292
+User Display Name Changed - 116293 
+
+## Computers
+Computer Created - 116304
+Computer Deleted - 116306
+Computer Changed - 116305
+Computer Enabled - 115701
+Computer Disabled - 115704
+
+## Security Groups
+Domain Local Group Created - 116308
+Domain Local Group Member Added - 116322
+Domain Local Group Member Removed - 116323
+Domain Local Group Modified - 116326
+Domain Local Group Deleted - 116314
+
+Global Group Created - 116307
+Global Group Member Added - 116319
+Global Group Member Removed - 116321
+Global Group Modified - 116327
+Global Group Deleted - 116313
+
+Universal Group Created - 116309
+Universal Group Member Added - 116324
+Universal Group Member Removed - 116325
+Universal Group Modified - 116328
+Universal Group Deleted - 116315
+
+## Distribution Groups
+Domain Local Group Created - 116311
+Domain Local Group Member Added - 116330
+Domain Local Group Member Removed - 116331
+Domain Local Group Modified - 116332
+Domain Local Group Deleted - 116317
+
+Universal Group Created - 116312
+Universal Group Modified - 116335
+Universal Group Deleted - 116318
+
+## OU
+OU Created - 116451
+OU Deleted - 116452
+AD User OU Movement - 116450
+AD Computer OU Movement - 116453
+AD Group OU Movement - 116454
+
+##############################################################
+
+GET _ingest/pipeline/ad_enrichment (To see the Logic/Rules)
+
+{
+  "ad_enrichment": {
+    "description": "AD Labels: Object Type and Action (Split Enabled/Disabled)",
+    "processors": [
+      {
+        "set": {
+          "if": "['116302','116301','116296','116298','115702','115705','116297','116299','116295'].contains(ctx.rule?.id)",
+          "field": "ad_object",
+          "value": "user"
+        }
+      },
+      {
+        "set": {
+          "if": "['116304','116306','116305','115701','115704'].contains(ctx.rule?.id)",
+          "field": "ad_object",
+          "value": "computer"
+        }
+      },
+      {
+        "set": {
+          "if": "['116308','116322','116323','116326','116314','116307','116319','116321','116327','116313','116309','116324','116325','116328','116315','116311','116330','116331','116332','116317','116312','116335','116318'].contains(ctx.rule?.id)",
+          "field": "ad_object",
+          "value": "group"
+        }
+      },
+      {
+        "set": {
+          "if": "['116302','116304','116308','116307','116309','116311','116312'].contains(ctx.rule?.id)",
+          "field": "ad_action",
+          "value": "created"
+        }
+      },
+      {
+        "set": {
+          "if": "['116301','116306','116314','116313','116315','116317','116318'].contains(ctx.rule?.id)",
+          "field": "ad_action",
+          "value": "deleted"
+        }
+      },
+      {
+        "set": {
+          "if": "['116322','116319','116324','116330'].contains(ctx.rule?.id)",
+          "field": "ad_action",
+          "value": "added"
+        }
+      },
+      {
+        "set": {
+          "if": "['116323','116321','116325','116331'].contains(ctx.rule?.id)",
+          "field": "ad_action",
+          "value": "removed"
+        }
+      },
+      {
+        "set": {
+          "if": "['116296','116298','116295','116305','116326','116327','116328','116332','116335'].contains(ctx.rule?.id)",
+          "field": "ad_action",
+          "value": "modified"
+        }
+      },
+      {
+        "set": {
+          "if": "['115702','115701'].contains(ctx.rule?.id)",
+          "field": "ad_action",
+          "value": "enabled"
+        }
+      },
+      {
+        "set": {
+          "if": "['115705','115704'].contains(ctx.rule?.id)",
+          "field": "ad_action",
+          "value": "disabled"
+        }
+      },
+      {
+        "set": {
+          "if": "['116297'].contains(ctx.rule?.id)",
+          "field": "ad_action",
+          "value": "locked"
+        }
+      },
+      {
+        "set": {
+          "if": "['116299'].contains(ctx.rule?.id)",
+          "field": "ad_action",
+          "value": "unlocked"
+        }
+      }
+    ]
+  }
+}
+
+
+GET _index_template/wazuh-enrichment (To see the Attachment/Template)
+
+{
+  "index_templates": [
+    {
+      "name": "wazuh-enrichment",
+      "index_template": {
+        "index_patterns": [
+          "wazuh-alerts-4.x-*"
+        ],
+        "template": {
+          "settings": {
+            "index": {
+              "default_pipeline": "ad_enrichment"
+            }
+          }
+        },
+        "composed_of": [],
+        "priority": 500
+      }
+    }
+  ]
+}
