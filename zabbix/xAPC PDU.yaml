@@ -1,0 +1,347 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 08ad08f6491047718d09263a79bebfba
+      name: MT
+  templates:
+    - uuid: 3b53a9abf6a14b0a8d34227b5251992b
+      template: 'xAPC PDU'
+      name: 'xAPC PDU'
+      description: |
+        This APC Template contains outlet discovery and should work with any managed or switched APC PDU.
+        
+        Contains sane triggers, load status, graphs, etc.
+        
+        Triggers: APC Load State, Load Change, Power Alarm, etc.
+        
+        
+        Items: Basic information (model, name, firmware, etc), Power load/peak/etc, Master States (Enable for older units), All APC value mappings, and much more.
+        
+        Graphs: Load and Current
+        
+        Outlet Status (Dynamic Discovery)
+      groups:
+        - name: MT
+      items:
+        - uuid: e35e1a17f2714584a7c21dca1fd0c579
+          name: 'Humidity Sensor'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.318.1.1.26.10.2.2.1.10.1
+          key: ACP-PDU-Humidity
+          value_type: FLOAT
+          units: '%'
+        - uuid: 99de1f3aef94482cba93ea03fc6d2c38
+          name: 'Device Status'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.4.3.1.4.1
+          key: APC-PDU-Device-Status
+          delay: '30'
+          history: 90d
+          valuemap:
+            name: 'APC Status Load State'
+          triggers:
+            - uuid: ff2f2311ac0b45a386e70b7f5c27e394
+              expression: 'last(/xAPC PDU/APC-PDU-Device-Status)<>2'
+              name: 'APC PDU Load State'
+              priority: HIGH
+              dependencies:
+                - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                  expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+        - uuid: c256f90f5fb84cecb99b91d51a253037
+          name: 'Firmware Version'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.2.1.6.1
+          key: APC-PDU-Firmware
+          delay: 1d
+          history: 90d
+          value_type: CHAR
+        - uuid: 41c31fb5464b44bcb4c3421915b156a8
+          name: 'Input Voltage'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.6.3.1.6.1
+          key: APC-PDU-Input-Voltage
+          delay: '30'
+          history: 90d
+          units: V
+        - uuid: 64516935470946b1bba9013dd9ef110c
+          name: Location
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.2.1.4.1
+          key: APC-PDU-Location
+          delay: 1d
+          history: 90d
+          value_type: CHAR
+        - uuid: fd7da68d7bab440cb6375129e4247d53
+          name: 'Max Load Rating'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.4.2.1.12.1
+          key: APC-PDU-Max-Load-Rating
+          delay: 1d
+          history: 90d
+          units: A
+        - uuid: bb2138c8dc934590be85cb41cc9059cf
+          name: 'Model Number'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.2.1.8.1
+          key: APC-PDU-Model-Number
+          delay: 1d
+          history: 90d
+          value_type: CHAR
+        - uuid: 6eacefdd9b6b4a2aa21f6de126b4c24e
+          name: 'Device Name'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.2.1.3.1
+          key: APC-PDU-Name
+          delay: 1d
+          history: 90d
+          value_type: CHAR
+        - uuid: 6a910e648e8e42eabb70b37cce97f5ea
+          name: 'Phase 1 (TOTAL)'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.12.2.3.1.1.2.1
+          key: APC-PDU-P1
+          value_type: FLOAT
+          units: A
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+        - uuid: 456b00fcd8474dffa05d1388e9c3a34d
+          name: 'Phase 2 (Bank 1)'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.12.2.3.1.1.2.2
+          key: APC-PDU-P2
+          value_type: FLOAT
+          units: A
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+        - uuid: 9490c53832354121a3b17d4eb9fdefa6
+          name: 'Phase 3 (Bank 2)'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.12.2.3.1.1.2.3
+          key: APC-PDU-P3
+          value_type: FLOAT
+          units: A
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+        - uuid: c99ddc867d074cca84c1d378cbb46d33
+          name: 'Peak Power Timestamp (Most Recent)'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.4.3.1.7.1
+          key: APC-PDU-Peak-Power-Timestamp
+          delay: '300'
+          history: 90d
+          value_type: CHAR
+        - uuid: 187f1a27ad244248a678bc87348b6357
+          name: 'Device Power Supply Alarm'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.4.3.1.12.1
+          key: APC-PDU-PSU-Alarm
+          delay: '60'
+          history: 90d
+          valuemap:
+            name: 'APC Device Status Alarm'
+          triggers:
+            - uuid: f714a8b083b6412798b1f26143f4fcc4
+              expression: 'last(/xAPC PDU/APC-PDU-PSU-Alarm)<>1'
+              name: 'APC PDU Power Alarm'
+              priority: HIGH
+              dependencies:
+                - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                  expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+        - uuid: f2b1bf8aeef944fab29379beb8520c04
+          name: 'Temperature Sensor'
+          type: SNMP_AGENT
+          snmp_oid: 1.3.6.1.4.1.318.1.1.26.10.2.2.1.8.1
+          key: APC-PDU-Temp
+          value_type: FLOAT
+          units: F
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+            - type: JAVASCRIPT
+              parameters:
+                - 'return (value * 9/5) + 32;'
+        - uuid: 5a0a234c67f14ca9a62538fbbc6cb6b5
+          name: 'Total Peak Power'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.4.3.1.6.1
+          key: APC-PDU-Total-Power
+          delay: '300'
+          history: 90d
+          units: Kw
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+        - uuid: d26d8f23e0ac4e9cb403d23290afbe1d
+          name: 'Serial Number'
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.2.1.9.1
+          key: APC-Serial-Number
+          delay: 1d
+          history: 90d
+          value_type: CHAR
+        - uuid: 8a9c8266dc514e53944bf59b64d0303d
+          name: rPDU2DeviceStatusPower.1
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.4.3.1.5.1
+          key: rPDU2DeviceStatusPower.1
+          delay: '30'
+          history: 90d
+          units: Kw
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.01'
+        - uuid: dd14f285a54b4c66bda8ccc4eb2e2962
+          name: rPDU2GroupTotalEnergy.0
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.11.3.0
+          key: rPDU2GroupTotalEnergy.0
+          delay: '30'
+          history: 90d
+          units: w
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+          triggers:
+            - uuid: ff12b2f241ae480aac5944b296c8b8d9
+              expression: 'change(/xAPC PDU/rPDU2GroupTotalEnergy.0)>400'
+              name: 'APC PDU Load Change'
+              priority: INFO
+              dependencies:
+                - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                  expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+        - uuid: e7de9c88149348918c782a820c21b2cd
+          name: rPDU2PhaseStatusCurrent.1
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.6.3.1.5.1
+          key: rPDU2PhaseStatusCurrent.1
+          delay: '30'
+          history: 90d
+          units: A
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+        - uuid: f222e8e3eb7049bdb748eea205b0be4c
+          name: rPDU2PhaseStatusPeakCurrent.1
+          type: SNMP_AGENT
+          snmp_oid: .1.3.6.1.4.1.318.1.1.26.6.3.1.10.1
+          key: rPDU2PhaseStatusPeakCurrent.1
+          delay: '30'
+          history: 90d
+          units: A
+          preprocessing:
+            - type: MULTIPLIER
+              parameters:
+                - '0.1'
+      discovery_rules:
+        - uuid: 69c23ce227664395a870836c042d20ba
+          name: Outlets
+          type: SNMP_AGENT
+          snmp_oid: 'discovery[{#SNMPVALUE},.1.3.6.1.4.1.318.1.1.26.9.2.1.1.1]'
+          key: rPDU2Outlet
+          delay: '3600'
+          lifetime: 30d
+          enabled_lifetime_type: DISABLE_NEVER
+          item_prototypes:
+            - uuid: 92fdc0f5edb94e4fb93b2e619a3a38c5
+              name: 'Outlet $1 Name'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.26.9.2.1.1.3.{#SNMPINDEX}'
+              key: 'rPDU2OutletSwitchedConfigName[{#SNMPINDEX}]'
+              delay: '3600'
+              value_type: CHAR
+              tags:
+                - tag: Application
+                  value: Outlets
+            - uuid: 2bbb43aa28034defb80b751fc27aeabb
+              name: 'Outlet $1 Bank'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.26.9.2.2.1.6.{#SNMPINDEX}'
+              key: 'rPDU2OutletSwitchedPropertiesBank[{#SNMPINDEX}]'
+              delay: '86400'
+              tags:
+                - tag: Application
+                  value: Outlets
+            - uuid: 45bece696d3f45bf9a496bb47b9a6094
+              name: 'Outlet $1 State'
+              type: SNMP_AGENT
+              snmp_oid: '.1.3.6.1.4.1.318.1.1.26.9.2.3.1.5.{#SNMPINDEX}'
+              key: 'rPDU2OutletSwitchedStatusState[{#SNMPINDEX}]'
+              delay: '60'
+              valuemap:
+                name: 'APC Outlet State'
+              tags:
+                - tag: Application
+                  value: Outlets
+              trigger_prototypes:
+                - uuid: 255ed55d687a4c81926dd999a0a15b14
+                  expression: '(last(/xAPC PDU/rPDU2OutletSwitchedStatusState[{#SNMPINDEX}],#1)<>last(/xAPC PDU/rPDU2OutletSwitchedStatusState[{#SNMPINDEX}],#2))=1'
+                  name: 'Outlet {#SNMPVALUE} State Change'
+                  priority: INFO
+      macros:
+        - macro: '{$SNMP_COMMUNITY}'
+          value: public
+      valuemaps:
+        - uuid: d69cddd566264391944d4d334c099b9f
+          name: 'APC Device Status Alarm'
+          mappings:
+            - value: '1'
+              newvalue: normal
+            - value: '2'
+              newvalue: alarm
+        - uuid: 838b39954da54bad8ce71b396124d5e9
+          name: 'APC Outlet State'
+          mappings:
+            - value: '1'
+              newvalue: 'off'
+            - value: '2'
+              newvalue: 'on'
+        - uuid: bf24b1c220f7418f9d2c7de26ccd8e76
+          name: 'APC Status Load State'
+          mappings:
+            - value: '1'
+              newvalue: lowLoad
+            - value: '2'
+              newvalue: normal
+            - value: '3'
+              newvalue: nearOverload
+            - value: '4'
+              newvalue: overload
+  graphs:
+    - uuid: 100200efcc014aa695bea733bb074018
+      name: 'APC Current Usage'
+      graph_items:
+        - color: 1A7C11
+          item:
+            host: 'xAPC PDU'
+            key: rPDU2GroupTotalEnergy.0
+    - uuid: 260f292281274da9a7fefb80b6f33bbf
+      name: 'APC Phase Power Status'
+      graph_items:
+        - drawtype: GRADIENT_LINE
+          color: 00BB00
+          item:
+            host: 'xAPC PDU'
+            key: rPDU2PhaseStatusCurrent.1
+        - sortorder: '1'
+          drawtype: DASHED_LINE
+          color: DD0000
+          item:
+            host: 'xAPC PDU'
+            key: APC-PDU-Max-Load-Rating
+        - sortorder: '2'
+          drawtype: DASHED_LINE
+          color: EEEE00
+          item:
+            host: 'xAPC PDU'
+            key: rPDU2PhaseStatusPeakCurrent.1
