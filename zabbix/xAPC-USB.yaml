@@ -1,0 +1,115 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 08ad08f6491047718d09263a79bebfba
+      name: MT
+  templates:
+    - uuid: 0f0debe052924f8a9cc0d0b653385790
+      template: xAPC-USB
+      name: xAPC-USB
+      groups:
+        - name: MT
+      items:
+        - uuid: 17617c3816644072af1a6b4a8fa0f485
+          name: 'APC Charge'
+          key: battery.charge
+          units: '%'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - EstimatedChargeRemaining=(\d+)
+                - \1
+        - uuid: ee9b6080db6948a98612902ceae539d5
+          name: 'APC Runtime'
+          key: battery.runtime
+          units: Minutes
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - EstimatedRunTime=(\d+)
+                - \1
+          triggers:
+            - uuid: 824a1036af3f45ab95b0c058ba629852
+              expression: last(/xAPC-USB/battery.runtime)<10
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: last(/xAPC-USB/battery.runtime)>10
+              name: 'UPS Battery 10 Minutes Remaining!'
+              priority: DISASTER
+              tags:
+                - tag: Trigger
+                  value: APC
+            - uuid: ac806ba866074d95b01a5b0ae8d18e3d
+              expression: last(/xAPC-USB/battery.runtime)<30
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: last(/xAPC-USB/battery.runtime)>30
+              name: 'UPS Battery 30 Minutes Remaining!'
+              priority: HIGH
+              tags:
+                - tag: Trigger
+                  value: APC
+        - uuid: 1c38755895504cd98159987f0be9b77b
+          name: 'APC Status'
+          key: battery.status
+          valuemap:
+            name: 'APC Status'
+          preprocessing:
+            - type: REGEX
+              parameters:
+                - BatteryStatus=(\d+)
+                - \1
+          triggers:
+            - uuid: 4b849d6301f9426c8a2e2720340c2a15
+              expression: last(/xAPC-USB/battery.status)=1
+              recovery_mode: RECOVERY_EXPRESSION
+              recovery_expression: last(/xAPC-USB/battery.status)=2
+              name: 'UPS is on battery!'
+              priority: DISASTER
+              tags:
+                - tag: Trigger
+                  value: APC
+      valuemaps:
+        - uuid: 6392fa3eb0434da9bd3a1fcd1f7f457f
+          name: 'APC Status'
+          mappings:
+            - value: '1'
+              newvalue: 'On Battery'
+            - value: '2'
+              newvalue: 'AC Power'
+            - value: '3'
+              newvalue: 'Fully Charged'
+            - value: '4'
+              newvalue: Low
+            - value: '5'
+              newvalue: Critical
+            - value: '6'
+              newvalue: Charging
+            - value: '11'
+              newvalue: 'Partially Charged'
+  triggers:
+    - uuid: 03172e952b434b30a6dfeb40c161b84d
+      expression: last(/xAPC-USB/battery.charge)<15
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: last(/xAPC-USB/battery.status)>15
+      name: 'UPS Battery is BELOW 15%!'
+      priority: DISASTER
+      tags:
+        - tag: Trigger
+          value: APC
+    - uuid: aeaa98f1e815488b9334c904c394f180
+      expression: last(/xAPC-USB/battery.charge)<50
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: last(/xAPC-USB/battery.status)>50
+      name: 'UPS Battery is BELOW 50%!'
+      priority: HIGH
+      tags:
+        - tag: Trigger
+          value: APC
+    - uuid: 07af28d7a5704629b429dfd740c96f8f
+      expression: last(/xAPC-USB/battery.charge)<100
+      recovery_mode: RECOVERY_EXPRESSION
+      recovery_expression: last(/xAPC-USB/battery.status)=100
+      name: 'UPS Battery is BELOW 100%!'
+      priority: DISASTER
+      tags:
+        - tag: Trigger
+          value: APC

@@ -1,0 +1,1061 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 08ad08f6491047718d09263a79bebfba
+      name: MT
+  templates:
+    - uuid: 4232bb16af74433fae00765cb09a2e16
+      template: 'xDell Powerstore'
+      name: 'xDell Powerstore'
+      groups:
+        - name: MT
+      items:
+        - uuid: 62138a5a5c754f0d8e916eebfac85885
+          name: 'PowerStore - Get Appliance (raw JSON)'
+          type: HTTP_AGENT
+          key: powerstore.appliance.raw
+          delay: 30m
+          history: 7d
+          value_type: TEXT
+          authtype: BASIC
+          username: API
+          password: {API-PASSWORD}
+          url: 'https://{HOST.HOST}/api/rest/appliance?select=id,name,service_tag,model,mode,node_count,drive_failure_tolerance_level,storage_class'
+          status_codes: ''
+          follow_redirects: 'NO'
+          output_format: JSON
+        - uuid: 4589ddfc1bcc4f079a65c64220594543
+          name: 'PowerStore - Get Drives (raw JSON)'
+          type: HTTP_AGENT
+          key: powerstore.drives.raw
+          delay: 30m
+          history: 7d
+          value_type: TEXT
+          authtype: BASIC
+          username: API
+          password: {API-PASSWORD}
+          url: 'https://{HOST.HOST}/api/rest/hardware?select=id,name,type,lifecycle_state&type=eq.Drive'
+          status_codes: ''
+          follow_redirects: 'NO'
+          output_format: JSON
+        - uuid: 7c4ac7fe2fe8441f9ed0f252bff58bb4
+          name: 'PowerStore - Get Eth Ports (raw JSON)'
+          type: HTTP_AGENT
+          key: powerstore.eth.raw
+          delay: 30m
+          history: 7d
+          value_type: TEXT
+          authtype: BASIC
+          username: API
+          password: {API-PASSWORD}
+          url: 'https://{HOST.HOST}/api/rest/eth_port?select=id,name,appliance_id,mac_address,is_link_up,is_in_use,current_speed,current_mtu'
+          status_codes: ''
+          follow_redirects: 'NO'
+          output_format: JSON
+        - uuid: e33dc40b1a6e4aada19e51112984018f
+          name: 'PowerStore - Get IO Modules (raw JSON)'
+          type: HTTP_AGENT
+          key: powerstore.io.raw
+          delay: 30m
+          history: 7d
+          value_type: TEXT
+          authtype: BASIC
+          username: API
+          password: {API-PASSWORD}
+          url: 'https://{HOST.HOST}/api/rest/hardware?select=id,name,type,lifecycle_state&type=eq.IO_Module'
+          status_codes: ''
+          follow_redirects: 'NO'
+          output_format: JSON
+        - uuid: 305b26e020ee47b4af1a27e6dbb5ba63
+          name: 'PowerStore - Get Initiators (raw JSON)'
+          type: HTTP_AGENT
+          key: powerstore.iscsi.raw
+          delay: 30m
+          history: 7d
+          value_type: TEXT
+          authtype: BASIC
+          username: API
+          password: {API-PASSWORD}
+          url: 'https://{HOST.HOST}/api/rest/initiator?select=id,host_id,port_name,port_type,active_sessions,host'
+          status_codes: ''
+          follow_redirects: 'NO'
+          output_format: JSON
+        - uuid: 8f7f825a67e2409a8d1a283870528a29
+          name: 'PowerStore - Get PSU (raw JSON)'
+          type: HTTP_AGENT
+          key: powerstore.psu.raw
+          delay: 30m
+          history: 7d
+          value_type: TEXT
+          authtype: BASIC
+          username: API
+          password: {API-PASSWORD}
+          url: 'https://{HOST.HOST}/api/rest/hardware?select=id,name,type,lifecycle_state&type=eq.Power_Supply'
+          status_codes: ''
+          follow_redirects: 'NO'
+          output_format: JSON
+        - uuid: 2f725277ab674301b2caecd0fcf29c57
+          name: 'PowerStore - Get Volumes (raw JSON)'
+          type: HTTP_AGENT
+          key: powerstore.volumes.raw
+          delay: 30m
+          history: 7d
+          value_type: TEXT
+          authtype: BASIC
+          username: API
+          password: {API-PASSWORD}
+          url: 'https://{HOST.HOST}/api/rest/volume?select=id,name,type,state,size,logical_used,&type=eq.Primary'
+          status_codes: ''
+          follow_redirects: 'NO'
+          output_format: JSON
+      discovery_rules:
+        - uuid: 3ba741dbae4a4c418ec8c6609023f8c0
+          name: 'Discover PowerStore Appliance'
+          type: DEPENDENT
+          key: powerstore.appliance
+          item_prototypes:
+            - uuid: d09aca7b279d4c058ec6739c1608b2cc
+              name: 'Drive Failure Tolerance Level'
+              type: DEPENDENT
+              key: 'powerstore.appliance.hddfailurelvl[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].drive_failure_tolerance_level'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.appliance.raw
+              tags:
+                - tag: PowerStore
+                  value: Appliance
+            - uuid: 26f392a37d314c11b00936cd6ad2396e
+              name: Model
+              type: DEPENDENT
+              key: 'powerstore.appliance.model[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].model'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.appliance.raw
+              tags:
+                - tag: PowerStore
+                  value: Appliance
+            - uuid: b65d5948a50b4e6a9708ac9019dbc53d
+              name: 'Storage Mode'
+              type: DEPENDENT
+              key: 'powerstore.appliance.mode[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].mode'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.appliance.raw
+              tags:
+                - tag: PowerStore
+                  value: Appliance
+            - uuid: 442da04f42ab44978e9b23c90a3082a7
+              name: 'Service Tag'
+              type: DEPENDENT
+              key: 'powerstore.appliance.service_tag[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].service_tag'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.appliance.raw
+              tags:
+                - tag: PowerStore
+                  value: Appliance
+            - uuid: 6d6fa29b127b4214816b1429b28a2155
+              name: 'Storage Class'
+              type: DEPENDENT
+              key: 'powerstore.appliance.storage_class[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].storage_class'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.appliance.raw
+              tags:
+                - tag: PowerStore
+                  value: Appliance
+          master_item:
+            key: powerstore.appliance.raw
+          lld_macro_paths:
+            - lld_macro: '{#DRIVE_FAILURE_TOLERANCE_LEVEL}'
+              path: $.drive_failure_tolerance_level
+            - lld_macro: '{#ID}'
+              path: $.id
+            - lld_macro: '{#MODEL}'
+              path: $.model
+            - lld_macro: '{#MODE}'
+              path: $.mode
+            - lld_macro: '{#NAME}'
+              path: $.name
+            - lld_macro: '{#NODE_COUNT}'
+              path: $.node_count
+            - lld_macro: '{#SERVICE_TAG}'
+              path: $.service_tag
+            - lld_macro: '{#STORAGE_CLASS}'
+              path: $.storage_class
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.body[*]'
+        - uuid: 5d145622172d4d688ba70d38f7be6016
+          name: 'Discover PowerStore Drives'
+          type: DEPENDENT
+          key: powerstore.drives
+          item_prototypes:
+            - uuid: 5fd3a4c8d5be40c29634a32a48e119e3
+              name: 'HDD [{#NAME}]: Status'
+              type: DEPENDENT
+              key: 'powerstore.drive.state[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].lifecycle_state'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.drives.raw
+              tags:
+                - tag: PowerStore
+                  value: 'Drive Health'
+              trigger_prototypes:
+                - uuid: c843d97875e64ef4bf54af59c119ecf7
+                  expression: |
+                    last(/xDell Powerstore/powerstore.drive.state[{#NAME}])="Failed"
+                    or
+                    last(/xDell Powerstore/powerstore.drive.state[{#NAME}])="Prepare_Failed"
+                  name: 'Drive {#NAME} has FAILED!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: DISASTER
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                  tags:
+                    - tag: Component
+                      value: Drive
+                - uuid: d36a11c2bc2a4f279b0eae72130ddb77
+                  expression: |
+                    last(/xDell Powerstore/powerstore.drive.state[{#NAME}])="Uninitialized"
+                    or
+                    last(/xDell Powerstore/powerstore.drive.state[{#NAME}])="Initializing"
+                    or
+                    last(/xDell Powerstore/powerstore.drive.state[{#NAME}])="Prepare_Reset"
+                    or
+                    last(/xDell Powerstore/powerstore.drive.state[{#NAME}])="Trigger_Update"
+                  name: 'Drive {#NAME} is in Startup/Transient mode!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: WARNING
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                  tags:
+                    - tag: Component
+                      value: Drive
+                - uuid: 83148b7edcd64b75b736262704c5d29e
+                  expression: |
+                    last(/xDell Powerstore/powerstore.drive.state[{#NAME}])<>"Healthy"
+                    and
+                    last(/xDell Powerstore/powerstore.drive.state[{#NAME}])="Replaced"
+                    or
+                    last(/xDell Powerstore/powerstore.drive.state[{#NAME}])="Disconnected"
+                  name: 'Drive {#NAME} removed/missing/error!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: WARNING
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                  tags:
+                    - tag: Component
+                      value: Drive
+          master_item:
+            key: powerstore.drives.raw
+          lld_macro_paths:
+            - lld_macro: '{#ID}'
+              path: $.id
+            - lld_macro: '{#NAME}'
+              path: $.name
+            - lld_macro: '{#STATE}'
+              path: $.lifecycle_state
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.body[*]'
+        - uuid: e602d0a25d144570b0ecf192cb5ac407
+          name: 'Discover PowerStore Eth Ports'
+          type: DEPENDENT
+          key: powerstore.eth
+          item_prototypes:
+            - uuid: 8ad56b1056494660bc7dbb6e4e96aa0d
+              name: 'Link ({#NAME}) MTU'
+              type: DEPENDENT
+              key: 'powerstore.eth.link_mtu[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].current_mtu'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.eth.raw
+              tags:
+                - tag: PowerStore
+                  value: Eth
+            - uuid: ec249c7bc8c74cd1a873fa31570497de
+              name: 'Link ({#NAME}) Speed'
+              type: DEPENDENT
+              key: 'powerstore.eth.link_speed[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].current_speed'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.eth.raw
+              tags:
+                - tag: PowerStore
+                  value: Eth
+            - uuid: bf40922742e24ae28a16a7c0da7a3d79
+              name: 'Link ({#NAME}) UP STATUS'
+              type: DEPENDENT
+              key: 'powerstore.eth.link_status[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].is_link_up'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.eth.raw
+              tags:
+                - tag: PowerStore
+                  value: Eth
+            - uuid: 87e9ec1f504640bb9a73aba6a854abf5
+              name: 'FE PORT [{#NAME}] Bytes Recieved'
+              type: HTTP_AGENT
+              key: 'powerstore.eth.recieved[{#NAME}]'
+              delay: 10m
+              trends: '0'
+              units: Bytes
+              authtype: BASIC
+              username: API
+              password: {API-PASSWORD}
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.fe_port_id=="{#ID}")].bytes_rx_ps'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var arr = JSON.parse(value);          // value is a JSON array
+                      var sum = 0;
+                      var count = 0;
+                      for (var i = 0; i < arr.length; i++) {
+                        var n = parseFloat(arr[i]);
+                        if (isFinite(n)) {
+                          sum += n;
+                          count++;
+                        }
+                      }
+                      if (count === 0) { return 0; }
+                      return sum / count;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              url: 'https://{HOST.HOST}/api/rest/metrics/generate'
+              follow_redirects: 'NO'
+              post_type: JSON
+              posts: |
+                {
+                  "entity": "performance_metrics_by_fe_eth_port",
+                  "entity_id": "{#ID}",
+                  "interval": "Best_Available"
+                }
+              request_method: POST
+              output_format: JSON
+              tags:
+                - tag: PowerStore
+                  value: 'Eth TX'
+            - uuid: c6a9210f8eeb4fc8a60c600a5de2613e
+              name: 'FE PORT [{#NAME}] RX CRC Errors'
+              type: HTTP_AGENT
+              key: 'powerstore.eth.rx_crc[{#NAME}]'
+              delay: 10m
+              trends: '0'
+              authtype: BASIC
+              username: API
+              password: {API-PASSWORD}
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.fe_port_id=="{#ID}")].pkt_rx_crc_error_ps'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var arr = JSON.parse(value);
+                      // If the filter returned [[...]], flatten once; if it returned a scalar, box it
+                      if (Array.isArray(arr) && Array.isArray(arr[0])) arr = arr[0];
+                      if (!Array.isArray(arr)) arr = [arr];
+                      // Find the max, ignoring non-numeric values
+                      var max = null;
+                      for (var i = 0; i < arr.length; i++) {
+                        var n = parseFloat(arr[i]);
+                        if (isFinite(n)) {
+                          if (max === null || n > max) max = n;
+                        }
+                      }
+                      return max === null ? 0 : max;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              url: 'https://{HOST.HOST}/api/rest/metrics/generate'
+              follow_redirects: 'NO'
+              post_type: JSON
+              posts: |
+                {
+                  "entity": "performance_metrics_by_fe_eth_port",
+                  "entity_id": "{#ID}",
+                  "interval": "Best_Available"
+                }
+              request_method: POST
+              output_format: JSON
+              tags:
+                - tag: PowerStore
+                  value: 'Eth TX'
+            - uuid: b5493efe5b7c497995c618f91b946e38
+              name: 'FE PORT [{#NAME}] Bytes Sent'
+              type: HTTP_AGENT
+              key: 'powerstore.eth.sent[{#NAME}]'
+              delay: 10m
+              trends: '0'
+              units: Bytes
+              authtype: BASIC
+              username: API
+              password: {API-PASSWORD}
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.fe_port_id=="{#ID}")].bytes_tx_ps'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var arr = JSON.parse(value);          // value is a JSON array
+                      var sum = 0;
+                      var count = 0;
+                      for (var i = 0; i < arr.length; i++) {
+                        var n = parseFloat(arr[i]);
+                        if (isFinite(n)) {
+                          sum += n;
+                          count++;
+                        }
+                      }
+                      if (count === 0) { return 0; }
+                      return sum / count;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              url: 'https://{HOST.HOST}/api/rest/metrics/generate'
+              follow_redirects: 'NO'
+              post_type: JSON
+              posts: |
+                {
+                  "entity": "performance_metrics_by_fe_eth_port",
+                  "entity_id": "{#ID}",
+                  "interval": "Best_Available"
+                }
+              request_method: POST
+              output_format: JSON
+              tags:
+                - tag: PowerStore
+                  value: 'Eth TX'
+            - uuid: 57fd55284adb43f6b1affadbfed7eb44
+              name: 'FE PORT [{#NAME}] RX No Buffer Errors'
+              type: HTTP_AGENT
+              key: 'powerstore.eth.trx_error2[{#NAME}]'
+              delay: 10m
+              trends: '0'
+              authtype: BASIC
+              username: API
+              password: {API-PASSWORD}
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.fe_port_id=="{#ID}")].pkt_rx_no_buffer_error_ps'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var arr = JSON.parse(value);
+                      // If the filter returned [[...]], flatten once; if it returned a scalar, box it
+                      if (Array.isArray(arr) && Array.isArray(arr[0])) arr = arr[0];
+                      if (!Array.isArray(arr)) arr = [arr];
+                      // Find the max, ignoring non-numeric values
+                      var max = null;
+                      for (var i = 0; i < arr.length; i++) {
+                        var n = parseFloat(arr[i]);
+                        if (isFinite(n)) {
+                          if (max === null || n > max) max = n;
+                        }
+                      }
+                      return max === null ? 0 : max;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              url: 'https://{HOST.HOST}/api/rest/metrics/generate'
+              follow_redirects: 'NO'
+              post_type: JSON
+              posts: |
+                {
+                  "entity": "performance_metrics_by_fe_eth_port",
+                  "entity_id": "{#ID}",
+                  "interval": "Best_Available"
+                }
+              request_method: POST
+              output_format: JSON
+              tags:
+                - tag: PowerStore
+                  value: 'Eth TX'
+            - uuid: 3973fb9cef8a442e818fcb9d17d64336
+              name: 'FE PORT [{#NAME}] TX Errors'
+              type: HTTP_AGENT
+              key: 'powerstore.eth.tx_error[{#NAME}]'
+              delay: 10m
+              trends: '0'
+              authtype: BASIC
+              username: API
+              password: {API-PASSWORD}
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.fe_port_id=="{#ID}")].pkt_tx_error_ps'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var arr = JSON.parse(value);
+                      // If the filter returned [[...]], flatten once; if it returned a scalar, box it
+                      if (Array.isArray(arr) && Array.isArray(arr[0])) arr = arr[0];
+                      if (!Array.isArray(arr)) arr = [arr];
+                      // Find the max, ignoring non-numeric values
+                      var max = null;
+                      for (var i = 0; i < arr.length; i++) {
+                        var n = parseFloat(arr[i]);
+                        if (isFinite(n)) {
+                          if (max === null || n > max) max = n;
+                        }
+                      }
+                      return max === null ? 0 : max;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              url: 'https://{HOST.HOST}/api/rest/metrics/generate'
+              follow_redirects: 'NO'
+              post_type: JSON
+              posts: |
+                {
+                  "entity": "performance_metrics_by_fe_eth_port",
+                  "entity_id": "{#ID}",
+                  "interval": "Best_Available"
+                }
+              request_method: POST
+              output_format: JSON
+              tags:
+                - tag: PowerStore
+                  value: 'Eth TX'
+          master_item:
+            key: powerstore.eth.raw
+          lld_macro_paths:
+            - lld_macro: '{#APPLIANCE_ID}'
+              path: $.appliance_id
+            - lld_macro: '{#CURRENT_MTU}'
+              path: $.current_mtu
+            - lld_macro: '{#CURRENT_SPEED}'
+              path: $.current_speed
+            - lld_macro: '{#ID}'
+              path: $.id
+            - lld_macro: '{#IS_IN_USE}'
+              path: $.is_in_use
+            - lld_macro: '{#IS_LINK_UP}'
+              path: $.is_link_up
+            - lld_macro: '{#MAC_ADDRESS}'
+              path: $.mac_address
+            - lld_macro: '{#NAME}'
+              path: $.name
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.body[*]'
+        - uuid: ff751e8cf64d49e0bf2176da4689d113
+          name: 'Discover PowerStore IO Modules'
+          type: DEPENDENT
+          key: powerstore.io
+          item_prototypes:
+            - uuid: a1683abbf17d420da83dda6202bd69c4
+              name: 'IO Module [{#NAME}]: Status'
+              type: DEPENDENT
+              key: 'powerstore.io.state[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].lifecycle_state'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.io.raw
+              tags:
+                - tag: PowerStore
+                  value: IO
+              trigger_prototypes:
+                - uuid: 34376b027f5243bbbb90eae86f4a0092
+                  expression: |
+                    last(/xDell Powerstore/powerstore.io.state[{#NAME}])="Failed"
+                    or
+                    last(/xDell Powerstore/powerstore.io.state[{#NAME}])="Prepare_Failed"
+                  name: 'IO Module {#NAME} has FAILED!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: DISASTER
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: d8aa8526e34d4a5689a5e0462146cf26
+                  expression: |
+                    last(/xDell Powerstore/powerstore.io.state[{#NAME}])="Uninitialized"
+                    or
+                    last(/xDell Powerstore/powerstore.io.state[{#NAME}])="Initializing"
+                    or
+                    last(/xDell Powerstore/powerstore.io.state[{#NAME}])="Prepare_Reset"
+                    or
+                    last(/xDell Powerstore/powerstore.io.state[{#NAME}])="Trigger_Update"
+                  name: 'IO Module {#NAME} is in Startup/Transient mode!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: WARNING
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: 0f191a93efad412fbc2538acfbdd8122
+                  expression: |
+                    last(/xDell Powerstore/powerstore.io.state[{#NAME}])<>"Healthy"
+                    and
+                    last(/xDell Powerstore/powerstore.io.state[{#NAME}])="Replaced"
+                    or
+                    last(/xDell Powerstore/powerstore.io.state[{#NAME}])="Disconnected"
+                  name: 'IO Module {#NAME} removed/missing/error!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: WARNING
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+          master_item:
+            key: powerstore.io.raw
+          lld_macro_paths:
+            - lld_macro: '{#ID}'
+              path: $.id
+            - lld_macro: '{#NAME}'
+              path: $.name
+            - lld_macro: '{#STATE}'
+              path: $.lifecycle_state
+            - lld_macro: '{#TYPE}'
+              path: $.type
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.body[*]'
+        - uuid: 9fd5b3c8524d442082b2aa318536b4b2
+          name: 'Discover PowerStore iSCSI Initiators'
+          type: DEPENDENT
+          key: powerstore.iscsi
+          item_prototypes:
+            - uuid: bcc7edfd96164772b22012624b6b98c2
+              name: 'iSCSI Port [{HOST_ID}]'
+              type: DEPENDENT
+              key: 'powerstore.iscsi.host_id[{#HOST_ID}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.host_id=="{#HOST_ID}")].host_id'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.iscsi.raw
+              tags:
+                - tag: PowerStore
+                  value: iSCSI
+            - uuid: bf87062d1cbf455295ee33c4437b528a
+              name: 'iSCSI Address [{HOST_ID}]'
+              type: DEPENDENT
+              key: 'powerstore.iscsi.port_name[{#HOST_ID}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.host_id=="{#HOST_ID}")].port_name'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.iscsi.raw
+              tags:
+                - tag: PowerStore
+                  value: iSCSI
+            - uuid: d28571664fea47a2a210938660a65109
+              name: 'iSCSI Port Type [{HOST_ID}]'
+              type: DEPENDENT
+              key: 'powerstore.iscsi.port_type[{#HOST_ID}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.host_id=="{#HOST_ID}")].port_type'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.iscsi.raw
+              tags:
+                - tag: PowerStore
+                  value: iSCSI
+          master_item:
+            key: powerstore.iscsi.raw
+          lld_macro_paths:
+            - lld_macro: '{#ACTIVE_SESSIONS}'
+              path: $.active_sessions
+            - lld_macro: '{#APPLIANCE_ID}'
+              path: $.appliance_id
+            - lld_macro: '{#HOST_ID}'
+              path: $.host_id
+            - lld_macro: '{#ID}'
+              path: $.id
+            - lld_macro: '{#PORT_NAME}'
+              path: $.port_name
+            - lld_macro: '{#PORT_TYPE}'
+              path: $.port_type
+            - lld_macro: '{#SIZE}'
+              path: $.size
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.body[*]'
+        - uuid: c1b2453dd08d4baca9bb6d5fe43f6d73
+          name: 'Discover PowerStore PSU'
+          type: DEPENDENT
+          key: powerstore.psu
+          item_prototypes:
+            - uuid: 0eb9694bb2a045aba58e413110fadf37
+              name: 'PSU [{#NAME}]: Status'
+              type: DEPENDENT
+              key: 'powerstore.psu.state[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].lifecycle_state'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.psu.raw
+              tags:
+                - tag: PowerStore
+                  value: PSU
+              trigger_prototypes:
+                - uuid: bff7728f0caa45d3a410518225b254c5
+                  expression: |
+                    last(/xDell Powerstore/powerstore.psu.state[{#NAME}])="Failed"
+                    or
+                    last(/xDell Powerstore/powerstore.psu.state[{#NAME}])="Prepare_Failed"
+                  name: 'PSU {#NAME} has FAILED!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: DISASTER
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: 246d7ff2b6a44dbf96982f200b702799
+                  expression: |
+                    last(/xDell Powerstore/powerstore.psu.state[{#NAME}])="Uninitialized"
+                    or
+                    last(/xDell Powerstore/powerstore.psu.state[{#NAME}])="Initializing"
+                    or
+                    last(/xDell Powerstore/powerstore.psu.state[{#NAME}])="Prepare_Reset"
+                    or
+                    last(/xDell Powerstore/powerstore.psu.state[{#NAME}])="Trigger_Update"
+                  name: 'PSU {#NAME} is in Startup/Transient mode!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: WARNING
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: 678c7b6004cc4ab68614647760cebcf3
+                  expression: |
+                    last(/xDell Powerstore/powerstore.psu.state[{#NAME}])<>"Healthy"
+                    and
+                    last(/xDell Powerstore/powerstore.psu.state[{#NAME}])="Replaced"
+                    or
+                    last(/xDell Powerstore/powerstore.psu.state[{#NAME}])="Disconnected"
+                  name: 'PSU {#NAME} removed/missing/error!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: WARNING
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+          master_item:
+            key: powerstore.psu.raw
+          lld_macro_paths:
+            - lld_macro: '{#ID}'
+              path: $.id
+            - lld_macro: '{#NAME}'
+              path: $.name
+            - lld_macro: '{#STATE}'
+              path: $.lifecycle_state
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.body[*]'
+        - uuid: 116ff69fca284041a26b6d10b0889b03
+          name: 'Discover PowerStore Volumes'
+          type: DEPENDENT
+          key: powerstore.volumes
+          item_prototypes:
+            - uuid: d4814e6db2f34353add0bfea761d3124
+              name: 'Volume [{#NAME}]: Logically Used'
+              type: DEPENDENT
+              key: 'powerstore.volume.logical[{#NAME}]'
+              trends: '0'
+              units: Bytes
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].logical_used'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.volumes.raw
+              tags:
+                - tag: PowerStore
+                  value: Volume
+            - uuid: 797c63c82fbc4d3ab25b92cf5355d197
+              name: 'Volume [{#NAME}]: Size'
+              type: DEPENDENT
+              key: 'powerstore.volume.size[{#NAME}]'
+              trends: '0'
+              units: Bytes
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].size'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.volumes.raw
+              tags:
+                - tag: PowerStore
+                  value: Volume
+            - uuid: c5a74b42f43a40509c41db81dc6ea056
+              name: 'Volume [{#NAME}]: Status'
+              type: DEPENDENT
+              key: 'powerstore.volume.state[{#NAME}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JSONPATH
+                  parameters:
+                    - '$.body[?(@.name=="{#NAME}")].state'
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      const a = JSON.parse(value);
+                      return Array.isArray(a) ? a[0] : value;
+                - type: DISCARD_UNCHANGED_HEARTBEAT
+                  parameters:
+                    - 1h
+              master_item:
+                key: powerstore.volumes.raw
+              tags:
+                - tag: PowerStore
+                  value: Volume
+              trigger_prototypes:
+                - uuid: 437c11fc065c4e759065c5ee16115d1c
+                  expression: 'last(/xDell Powerstore/powerstore.volume.state[{#NAME}])="Destroying"'
+                  name: 'Volume {#NAME} IS DESTROYING!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: WARNING
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: f411286c40394cdba1fa73f4c9011deb
+                  expression: 'last(/xDell Powerstore/powerstore.volume.state[{#NAME}])="Initializing"'
+                  name: 'Volume {#NAME} is Initializing!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: WARNING
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: 6bdc30c7a871451eb57de92b8e635a40
+                  expression: 'last(/xDell Powerstore/powerstore.volume.state[{#NAME}])="Offline"'
+                  name: 'Volume {#NAME} is OFFLINE!'
+                  opdata: '(state={ITEM.LASTVALUE})'
+                  priority: DISASTER
+                  type: MULTIPLE
+                  manual_close: 'YES'
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+          master_item:
+            key: powerstore.volumes.raw
+          lld_macro_paths:
+            - lld_macro: '{#ID}'
+              path: $.id
+            - lld_macro: '{#LOGICAL_USED}'
+              path: $.logical_used
+            - lld_macro: '{#NAME}'
+              path: $.name
+            - lld_macro: '{#SIZE}'
+              path: $.size
+            - lld_macro: '{#STATE}'
+              path: $.lifecycle_state
+          preprocessing:
+            - type: JSONPATH
+              parameters:
+                - '$.body[*]'
+      tags:
+        - tag: Device
+          value: SAN
+      macros:
+        - macro: '{$API.PWD}'
+          description: 2ue%a@6Uo4UbL$dG
+        - macro: '{$API.USR}'
+          description: API

@@ -1,0 +1,1060 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 08ad08f6491047718d09263a79bebfba
+      name: MT
+  templates:
+    - uuid: 01548d1b601f4732b8b26c229305e5bf
+      template: 'xAD DS Health and Performance'
+      name: 'xAD DS Health and Performance'
+      groups:
+        - name: MT
+      items:
+        - uuid: 9c8eb367ba9c4122b21defdf0707a89d
+          name: 'Baseline - DNS Total Query Received/sec'
+          type: CALCULATED
+          key: dns.query.rec.avg7d
+          delay: 1d
+          history: 1w
+          value_type: FLOAT
+          params: '1.1*max(//perf_counter_en[\DNS\Total Query Received/sec],7d)'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: DNS
+        - uuid: 57b3c04eb9d640369af1b6c0836b24df
+          name: 'Baseline - LDAP Client Sessions'
+          type: CALCULATED
+          key: ldap.client.session.avg7d
+          delay: 1d
+          history: 1w
+          value_type: FLOAT
+          params: '1.1*max(//perf_counter_en[\NTDS\LDAP Client Sessions],7d)'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: LDAP
+        - uuid: f13c111c5669475da6862558389d5174
+          name: 'LDAP Port 389'
+          key: 'net.tcp.listen[389]'
+          delay: 10m
+          history: 1w
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: Application
+              value: 'AD DS Network ports'
+            - tag: component
+              value: LDAP
+        - uuid: 539c7e58919c4969ad3400a8aa39d548
+          name: 'Kerberos Port 464'
+          key: 'net.tcp.listen[464]'
+          delay: 10m
+          history: 1w
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: Application
+              value: 'AD DS Network ports'
+        - uuid: 5bf4d465cc8149abaf8c6c03277f5e81
+          name: 'LDAPS Port 636'
+          key: 'net.tcp.listen[636]'
+          delay: 10m
+          history: 1w
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: Application
+              value: 'AD DS Network ports'
+            - tag: component
+              value: LDAP
+        - uuid: 718d90c8fde049e69ad2cb7ddb5fe937
+          name: 'Global Catalog Port 3268'
+          key: 'net.tcp.listen[3268]'
+          delay: 10m
+          history: 1w
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: Application
+              value: 'AD DS Network ports'
+        - uuid: f768630a78a647d78cf209529bfcd92c
+          name: 'Global Catalog Port 3269'
+          key: 'net.tcp.listen[3269]'
+          delay: 10m
+          history: 1w
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: Application
+              value: 'AD DS Network ports'
+        - uuid: 9422a131df6d413dbbd41036ed51a0e6
+          name: 'Database Cache % Hit'
+          key: 'perf_counter_en[\Database(lsass)\Database Cache % Hit]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: '%'
+          description: 'The "Database Cache % Hit" performance counter for LSASS (Local Security Authority Subsystem Service) indicates the percentage of database queries that are served from the cache, rather than requiring a disk read. A high hit rate (ideally above 90%) signifies efficient database access, while a low hit rate might indicate performance bottlenecks related to disk I/O or insufficient memory allocated for caching.'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+          triggers:
+            - uuid: cd80f7b81de4450aac5eaa7044625269
+              expression: 'min(/xAD DS Health and Performance/perf_counter_en[\Database(lsass)\Database Cache % Hit],20m)<90'
+              name: 'Database Cache % Hit < 90 % on {HOST.NAME}'
+              status: DISABLED
+              priority: AVERAGE
+              manual_close: 'YES'
+        - uuid: 3db6e037983940d9be2c778c5d4bfade
+          name: 'I/O Database Reads/sec'
+          key: 'perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Database Reads/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: /s
+          description: '"I/O Database Reads/sec ntdsa" refers to the rate at which read operations are performed on the Active Directory database (NTDS.dit) on a Windows server. This metric, measured in reads per second, indicates how frequently the server is accessing the Active Directory database to retrieve information. High values can suggest potential performance bottlenecks, especially if the server is experiencing slow response times.'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+          triggers:
+            - uuid: 71807bb6e6d0416fbaa68fb74833be03
+              expression: 'min(/xAD DS Health and Performance/perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Database Reads/sec],5m)>25'
+              name: 'I/O Database Reads/sec > 25 on {HOST.NAME}'
+              status: DISABLED
+              priority: WARNING
+              manual_close: 'YES'
+        - uuid: 7c33e63e882a48148348477a866a7545
+          name: 'I/O Database Reads Average Latency'
+          key: 'perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Database Reads Average Latency]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: ms
+          description: '"I/O Database Reads Average Latency (IODBReadsAvgLatency)" refers to the average time it takes for a database read operation to complete, measured in milliseconds. This metric is crucial for assessing the performance of a database system, as high latency can indicate bottlenecks and slow performance.'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+          triggers:
+            - uuid: 4ba50e9ab3c548ed9f7670aaf2d9fc64
+              expression: 'min(/xAD DS Health and Performance/perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Database Reads Average Latency],5m)>20'
+              name: 'I/O Database Reads Average Latency > 20ms on {HOST.NAME}'
+              status: DISABLED
+              priority: WARNING
+              manual_close: 'YES'
+        - uuid: a0714f8bb24a482481d5c84f77962b80
+          name: 'I/O Log Writes/sec'
+          key: 'perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Log Writes/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: /s
+          description: 'perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Log Writes/sec]'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+        - uuid: e95e676378d24f9cb5cfe58da9e24218
+          name: 'I/O Log Writes Average Latency'
+          key: 'perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Log Writes Average Latency]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: ms
+          description: 'perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Log Writes Average Latency]'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+          triggers:
+            - uuid: 611b5fa4963348ac8e79dae0bce0233f
+              expression: 'min(/xAD DS Health and Performance/perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Log Writes Average Latency],5m)>20'
+              name: 'I/O Log Writes Average Latency > 20ms on {HOST.NAME}'
+              status: DISABLED
+              priority: WARNING
+              manual_close: 'YES'
+        - uuid: ccb11bf658ec46b49f8e21d8c7d70862
+          name: 'DFS Replicated Folders (Conflict Space In Use)'
+          key: 'perf_counter_en[\DFS Replicated Folders(*)\Conflict Space In Use]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: Bytes
+          description: 'Monitoring the space utilization of the Conflict and Deleted area helps ensure that there is enough space to store replication conflicts and files deleted from replicated folders on the monitored computer. You can view a log of conflict files and their original file names by viewing the ConflictandDeletedManifest.xml file in the DfsrPrivate folder.'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: DFS
+        - uuid: 166510803335410991d6ce07001613af
+          name: 'DFS Replicated Folders (RDC Bytes Received)'
+          key: 'perf_counter_en[\DFS Replicated Folders(*)\RDC Bytes Received]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: DFS
+        - uuid: 5830f88357dd402dbb0fc569c2583e89
+          name: 'DFS Replicated Folders (Size of Files Received)'
+          key: 'perf_counter_en[\DFS Replicated Folders(*)\Size of Files Received]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: DFS
+        - uuid: c0e15e6a5af64d7ba001eaa5b389cee9
+          name: 'DFS Replicated Folders (Staging Space In Use)'
+          key: 'perf_counter_en[\DFS Replicated Folders(*)\Staging Space In Use]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: Bytes
+          description: |
+            This performance counter keeps track of the current disk space utilization for staging purposes, for each folder replicated by the monitored computer. Monitoring this performance counter enables administrators to understand the usage of each replicated folder’s staging area and figure out if the staging quotas need to be increased.
+            (http://go.microsoft.com/fwlink/?LinkId=186944)
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: DFS
+        - uuid: 751a5e1b5a304c96a0061c6c7c6540b9
+          name: 'DFS Replicated Folders (Total Files Received)'
+          key: 'perf_counter_en[\DFS Replicated Folders(*)\Total Files Received]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: DFS
+        - uuid: 640a13b4b62a4a228a52bfc9f0b98c99
+          name: 'ATQ Outstanding queued requests total'
+          key: 'perf_counter_en[\DirectoryServices(NTDS)\ATQ Outstanding Queued Requests]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          description: 'Current number of requests in the queue'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: ATQ
+        - uuid: f65a5ee4bc224698b96574255511293f
+          name: 'ATQ Threads total'
+          key: 'perf_counter_en[\DirectoryServices(NTDS)\ATQ Threads Total]'
+          delay: 5m
+          history: 1w
+          value_type: FLOAT
+          description: 'All Threads currently allocated'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: ATQ
+        - uuid: 94f2463710d3452395bb03bcc8d8f6b4
+          name: 'LDAP Bind time'
+          key: 'perf_counter_en[\DirectoryServices(NTDS)\LDAP Bind Time]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: ms
+          description: 'LDAP bind time refers to the duration it takes for a client to establish a connection with an LDAP server for authentication. It''s a crucial performance metric that indicates the server''s responsiveness and can impact user experience and overall directory service performance.'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: LDAP
+          triggers:
+            - uuid: 721183e283f04b3185bc08dcaba5ffca
+              expression: 'min(/xAD DS Health and Performance/perf_counter_en[\DirectoryServices(NTDS)\LDAP Bind Time],5m)>30'
+              name: 'LDAP Bind Time > 30ms on {HOST.NAME}'
+              priority: AVERAGE
+              manual_close: 'YES'
+        - uuid: 32ecf8fa6fe84f3596e1eef6c996b33f
+          name: 'Simple Binds/sec'
+          key: 'perf_counter_en[\DirectoryServices(NTDS)\Simple Binds/sec]'
+          delay: 10m
+          history: 1w
+          units: /s
+          description: 'In LDAP, a simple bind is a basic method of authentication where a client provides a distinguished name (DN) and password to the server, which then verifies these credentials.'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+        - uuid: fd3c312d6c944f4c8455a258dbb0ecd5
+          name: 'DNS Total Query Received/sec'
+          key: 'perf_counter_en[\DNS\Total Query Received/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: DNS
+          triggers:
+            - uuid: 917b85b5c5434af8b566f192e919aa41
+              expression: 'max(/xAD DS Health and Performance/perf_counter_en[\DNS\Total Query Received/sec],#3)>5000'
+              name: 'DNS Total Query Received/sec >5000'
+              opdata: 'Current value: {ITEM.LASTVALUE1}'
+              priority: AVERAGE
+              manual_close: 'YES'
+        - uuid: ee208fb7ec8741a4a9ed0dda0c06759d
+          name: 'DNS Total Response Sent/sec'
+          key: 'perf_counter_en[\DNS\Total Response Sent/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: DNS
+        - uuid: bc2630cd94024fefa3bfefc9b3050606
+          name: 'DNS UDP Query Received/sec'
+          key: 'perf_counter_en[\DNS\UDP Query Received/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: DNS
+        - uuid: 7df8baf26b5448dd810f00bee13eebe0
+          name: 'DNS UDP Response Sent/sec'
+          key: 'perf_counter_en[\DNS\UDP Response Sent/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: DNS
+        - uuid: e3063ed6bcb242d6ba43b4f3ca117ced
+          name: 'DRA Inbound Bytes Total/sec'
+          key: 'perf_counter_en[\NTDS\DRA Inbound Bytes Total/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: /s
+          description: 'perf_counter_en[\NTDA\DRA Inbound Bytes Total/sec]'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+        - uuid: edd8fbbf1dd449d495c03a6c895cbdb9
+          name: 'DRA Inbound Object Updates Remaining in Packet'
+          key: 'perf_counter_en[\NTDS\DRA Inbound Object Updates Remaining in Packet]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          description: 'perf_counter_en[\NTDA\DRA Inbound Object Updates Remaining in Packet]'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+        - uuid: c372fa1cf8404fff9ffcdf1c86497171
+          name: 'DRA Outbound Bytes Total/sec'
+          key: 'perf_counter_en[\NTDS\DRA Outbound Bytes Total/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: /s
+          description: 'perf_counter_en[\NTDA\DRA Outbound Bytes Total/sec]'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+        - uuid: ec722579ddf44498ae228a54231f0c5f
+          name: 'DRA Pending Replication Synchronizations'
+          key: 'perf_counter_en[\NTDS\DRA Pending Replication Synchronizations]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          description: 'perf_counter_en[\NTDA\DRA Pending Replication Synchronizations]'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+        - uuid: fe58cbd89ba94e34a70e09603bfda810
+          name: 'LDAP Active Threads'
+          key: 'perf_counter_en[\NTDS\LDAP Active Threads]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          description: 'perf_counter_en[\NTDS\LDAP Active Threads]'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: LDAP
+        - uuid: 27650f6d58c64c0bb07354ec74d636e9
+          name: 'LDAP Client Sessions'
+          key: 'perf_counter_en[\NTDS\LDAP Client Sessions]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: LDAP
+        - uuid: 6a7ff5ef860a490b8b1bfd4b3a4cc0a2
+          name: 'LDAP New Connections/sec'
+          key: 'perf_counter_en[\NTDS\LDAP New Connections/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: /s
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: LDAP
+        - uuid: 2126892ecadd4995aef19854dec4a912
+          name: 'LDAP New SSL Connections/sec'
+          key: 'perf_counter_en[\NTDS\LDAP New SSL Connections/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: /s
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: LDAP
+        - uuid: 0a0508bd91f146669482a2bdc45749a7
+          name: 'LDAP Searches/sec'
+          key: 'perf_counter_en[\NTDS\LDAP Searches/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: /s
+          description: 'perf_counter_en[\NTDS\LDAP Searches/sec]'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: LDAP
+        - uuid: fb193d229d3b4757b289c8ad40f09b1a
+          name: 'LDAP Writes/sec'
+          key: 'perf_counter_en[\NTDS\LDAP Writes/sec]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: /s
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+            - tag: component
+              value: LDAP
+        - uuid: 398955ae5e6745ba84b275862bca1031
+          name: 'Kerberos Authentications'
+          key: 'perf_counter_en[\Security system-wide statistics\Kerberos Authentications]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: /s
+          description: 'perf_counter[\Security system-wide statistics\Kerberos Authentications]'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+        - uuid: 23535be77abd4eb5a262f9953978cf80
+          name: 'NTLM Authentications'
+          key: 'perf_counter_en[\Security system-wide statistics\NTLM Authentications]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          units: /s
+          description: 'perf_counter_en[\Security system-wide statistics\NTLM Authentications]'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+        - uuid: 7e55a1f023fd481787310d6836caa828
+          name: 'Windows Time Computed Time Offset'
+          key: 'perf_counter_en[\Windows Time Service\Computed Time Offset]'
+          delay: 10m
+          history: 1w
+          value_type: FLOAT
+          description: 'The absolute time offset between the system clock and the chosen time source, as computed by the W32Time service in microseconds. When a new valid sample is available, the computed time is updated with the time offset indicated by the sample. This time is the actual time offset of the local clock. W32Time initiates clock correction by using this offset and updates the computed time in between samples with the remaining time offset that needs to be applied to the local clock. Clock accuracy can be tracked by using this performance counter with a low polling interval (for example, 256 seconds or less) and looking for the counter value to be smaller than the desired clock accuracy limit.'
+          tags:
+            - tag: Application
+              value: 'AD DS Performance'
+          triggers:
+            - uuid: 626006ec90594974a48200474a64124d
+              expression: 'min(/xAD DS Health and Performance/perf_counter_en[\Windows Time Service\Computed Time Offset],5m)>100000000'
+              name: 'Time Offset from Source is > 1 minute on host {HOST.NAME}'
+              priority: AVERAGE
+              manual_close: 'YES'
+        - uuid: 470f2bbce13b45bba53e816e843af348
+          name: 'SYSVOL Size'
+          key: 'vfs.dir.size["{$ADSYSVOL_PATH}"]'
+          delay: 12h
+          history: 1w
+          units: Bytes
+          tags:
+            - tag: Application
+              value: 'AD DS Storage'
+        - uuid: ba3ea33ddbe0483aa1dd88c68b1e517b
+          name: 'Database Size'
+          key: 'vfs.file.size["{$ADDB_PATH}"]'
+          delay: 6h
+          history: 1w
+          units: Bytes
+          tags:
+            - tag: Application
+              value: 'AD DS Storage'
+        - uuid: dc3cc0c66aa145c1bceab822e32c6556
+          name: 'Log File Size'
+          key: 'vfs.file.size["{$ADLOG_PATH}"]'
+          delay: 1h
+          history: 1w
+          units: Bytes
+          tags:
+            - tag: Application
+              value: 'AD DS Storage'
+      macros:
+        - macro: '{$ADDB_PATH}'
+          value: 'c:\windows\ntds\ntds.dit'
+        - macro: '{$ADLOG_PATH}'
+          value: 'c:\windows\ntds\edb.log'
+        - macro: '{$ADSYSVOL_PATH}'
+          value: 'c:\windows\SYSVOL'
+        - macro: '{$DNS.TOTAL.RECEIVED.MAX.WARN}'
+          value: '500'
+          description: 'Baseline for DNS.TOTAL.RECEIVED'
+        - macro: '{$LDAP.CLIENT.SESSIONS.WARN}'
+          value: '1000'
+          description: 'Baseline for LDAP.CLIENT.SESSIONS'
+      dashboards:
+        - uuid: 4a4228994faa45e986d06e13aa970d5d
+          name: 'AD DS Health and Performance'
+          pages:
+            - name: Main
+              widgets:
+                - type: graph
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'AD DS DB and Log Size'
+                    - type: STRING
+                      name: reference
+                      value: AAAAA
+                - type: graph
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'AD DS Authentications'
+                    - type: STRING
+                      name: reference
+                      value: AAAAB
+                - type: graph
+                  'y': '10'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'DNS Statistics'
+                    - type: STRING
+                      name: reference
+                      value: AAAAC
+                - type: graph
+                  'y': '15'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'Database ==> Instances Statistics'
+                    - type: STRING
+                      name: reference
+                      value: AAAAD
+                - type: graph
+                  x: '36'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: STRING
+                      name: reference
+                      value: AAAAE
+                - type: graph
+                  x: '36'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'LDAP Statistics'
+                    - type: STRING
+                      name: reference
+                      value: AAAAF
+                - type: graph
+                  x: '36'
+                  'y': '10'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'DRA Statistics'
+                    - type: STRING
+                      name: reference
+                      value: AAAAG
+            - name: 'LDAP Statistics'
+              display_period: '60'
+              widgets:
+                - type: graph
+                  name: 'LDAP Client Sessions'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'LDAP Sessions'
+                    - type: STRING
+                      name: reference
+                      value: AAAAH
+                - type: graph
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'LDAP Statistics'
+                    - type: STRING
+                      name: reference
+                      value: AAAAI
+                - type: graph
+                  name: 'Simple Binds/sec'
+                  'y': '10'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'Simple Binds'
+                    - type: STRING
+                      name: reference
+                      value: AAAAJ
+                - type: graph
+                  x: '36'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'LDAP Statistics of Connections Type'
+                    - type: STRING
+                      name: reference
+                      value: AAAAK
+                - type: graph
+                  name: 'LDAP Bind Time'
+                  x: '36'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'LDAP Bind Time'
+                    - type: STRING
+                      name: reference
+                      value: AAAAL
+            - name: Database
+              widgets:
+                - type: graph
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'AD DS DB and Log Size'
+                    - type: STRING
+                      name: reference
+                      value: AAAAM
+                - type: graph
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'Database ==> Instances Statistics'
+                    - type: STRING
+                      name: reference
+                      value: AAAAN
+                - type: graph
+                  x: '36'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'Database ==> Instances Statistics'
+                    - type: STRING
+                      name: reference
+                      value: AAAAO
+            - name: NetLogon
+              widgets:
+                - type: graph
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: STRING
+                      name: reference
+                      value: AAAAP
+                - type: graph
+                  x: '36'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'AD DS Authentications'
+                    - type: STRING
+                      name: reference
+                      value: AAAAQ
+            - name: DFSR
+              widgets:
+                - type: graph
+                  name: 'SYSVOL size'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: ITEM
+                      name: itemid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        key: 'vfs.dir.size["{$ADSYSVOL_PATH}"]'
+                    - type: STRING
+                      name: reference
+                      value: AAAAR
+                    - type: INTEGER
+                      name: show_legend
+                      value: '0'
+                    - type: INTEGER
+                      name: source_type
+                      value: '1'
+                - type: graph
+                  x: '36'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: STRING
+                      name: reference
+                      value: AAAAS
+                - type: graph
+                  x: '36'
+                  'y': '5'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: 'DFS Replicated Folders (Space In Use)'
+                    - type: STRING
+                      name: reference
+                      value: AAAAT
+            - name: ATQ
+              widgets:
+                - type: graph
+                  name: 'ATQ Threads'
+                  width: '36'
+                  height: '5'
+                  fields:
+                    - type: GRAPH
+                      name: graphid
+                      value:
+                        host: 'xAD DS Health and Performance'
+                        name: ATQ
+                    - type: STRING
+                      name: reference
+                      value: AAAAU
+      valuemaps:
+        - uuid: 7d7a9ff770b0415781bbc49c400a60ed
+          name: 'Service state'
+          mappings:
+            - value: '0'
+              newvalue: Down
+            - value: '1'
+              newvalue: Up
+        - uuid: 533232df55a847d4861fd1dd95d73baa
+          name: 'Windows service state'
+          mappings:
+            - value: '0'
+              newvalue: Running
+            - value: '1'
+              newvalue: Paused
+            - value: '2'
+              newvalue: 'Start pending'
+            - value: '3'
+              newvalue: 'Pause pending'
+            - value: '4'
+              newvalue: 'Continue pending'
+            - value: '5'
+              newvalue: 'Stop pending'
+            - value: '6'
+              newvalue: Stopped
+            - value: '7'
+              newvalue: Unknown
+            - value: '255'
+              newvalue: 'No such service'
+  triggers:
+    - uuid: 26fe1eb903814ec7b226df239ee0f949
+      expression: 'max(/xAD DS Health and Performance/perf_counter_en[\DNS\Total Query Received/sec],#3)>last(/xAD DS Health and Performance/dns.query.rec.avg7d)'
+      name: 'DNS Total Query Received/sec is anomalously high on {HOST.NAME}'
+      opdata: 'Current value: {ITEM.LASTVALUE1}'
+      status: DISABLED
+      priority: AVERAGE
+      manual_close: 'YES'
+    - uuid: 4a768cc34fc84e1aba5f8c07c622550e
+      expression: 'max(/xAD DS Health and Performance/perf_counter_en[\NTDS\LDAP Client Sessions],#3)>last(/xAD DS Health and Performance/ldap.client.session.avg7d)'
+      name: 'LDAP Client Sessions more than baseline on {HOST.NAME}'
+      opdata: 'Current value: {ITEM.LASTVALUE1}'
+      status: DISABLED
+      priority: WARNING
+      manual_close: 'YES'
+  graphs:
+    - uuid: e0e4a9ff9ece4fa6b353ea55412f6763
+      name: 'AD DS Authentications'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 1A7C11
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\Security system-wide statistics\Kerberos Authentications]'
+        - sortorder: '1'
+          color: F63100
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\Security system-wide statistics\NTLM Authentications]'
+    - uuid: bc99aef7310540cfa51279096b10d1ec
+      name: 'AD DS DB and Log Size'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 1A7C11
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'vfs.file.size["{$ADDB_PATH}"]'
+        - sortorder: '1'
+          color: F63100
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'vfs.file.size["{$ADLOG_PATH}"]'
+    - uuid: 2366b81f36ae4167bf5e0429c0369032
+      name: ATQ
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 199C0D
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\DirectoryServices(NTDS)\ATQ Threads Total]'
+    - uuid: d2bf271b0e4d4a33af6ffb19f8e289f2
+      name: 'Database ==> Instances Statistics'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 1A7C11
+          yaxisside: RIGHT
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Database Reads/sec]'
+        - sortorder: '1'
+          color: F63100
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Database Reads Average Latency]'
+        - sortorder: '2'
+          color: 2774A4
+          yaxisside: RIGHT
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Log Writes/sec]'
+        - sortorder: '3'
+          color: A54F10
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\Database ==> Instances(lsass/NTDSA)\I/O Log Writes Average Latency]'
+    - uuid: 5974bc3d6bad4d50add4e160a324f396
+      name: 'DFS Replicated Folders (Space In Use)'
+      show_triggers: 'NO'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 199C0D
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\DFS Replicated Folders(*)\Staging Space In Use]'
+        - sortorder: '1'
+          color: F63100
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\DFS Replicated Folders(*)\Conflict Space In Use]'
+    - uuid: c82983dceaa142ba9a9307cd0963f2ce
+      name: 'DNS Statistics'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 00FF00
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\DNS\Total Query Received/sec]'
+        - sortorder: '1'
+          color: FF4000
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\DNS\Total Response Sent/sec]'
+        - sortorder: '2'
+          color: 81C784
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\DNS\UDP Query Received/sec]'
+        - sortorder: '3'
+          color: FFAB91
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\DNS\UDP Response Sent/sec]'
+        - sortorder: '4'
+          drawtype: DASHED_LINE
+          color: CC6600
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: dns.query.rec.avg7d
+    - uuid: 8abeb5f241e14635a3ba13d12fed6b07
+      name: 'DRA Statistics'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 1A7C11
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\NTDS\DRA Inbound Object Updates Remaining in Packet]'
+        - sortorder: '1'
+          color: F63100
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\NTDS\DRA Pending Replication Synchronizations]'
+        - sortorder: '2'
+          color: 2774A4
+          yaxisside: RIGHT
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\NTDS\DRA Inbound Bytes Total/sec]'
+        - sortorder: '3'
+          color: A54F10
+          yaxisside: RIGHT
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\NTDS\DRA Outbound Bytes Total/sec]'
+    - uuid: 64ee2922612e465d9e17b9dd52ef9833
+      name: 'LDAP Bind Time'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 199C0D
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\DirectoryServices(NTDS)\LDAP Bind Time]'
+    - uuid: 464fbf8472d24a5a9ee2865b5313a0d3
+      name: 'LDAP Sessions'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 1A7C11
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\NTDS\LDAP Client Sessions]'
+        - sortorder: '1'
+          drawtype: DASHED_LINE
+          color: CC6600
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: ldap.client.session.avg7d
+    - uuid: 2833f9419ee542f794a3d78a22761661
+      name: 'LDAP Statistics'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: F63100
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\NTDS\LDAP Searches/sec]'
+        - sortorder: '1'
+          color: 2774A4
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\NTDS\LDAP Writes/sec]'
+    - uuid: 91df9727746a42ec867177f5314aabf5
+      name: 'LDAP Statistics of Connections Type'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: FF0000
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\NTDS\LDAP New Connections/sec]'
+        - sortorder: '1'
+          color: 00FF00
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\NTDS\LDAP New SSL Connections/sec]'
+    - uuid: 211e8e78c01d4c56b92b42b0928c0fa5
+      name: 'Simple Binds'
+      ymin_type_1: FIXED
+      graph_items:
+        - color: 199C0D
+          calc_fnc: ALL
+          item:
+            host: 'xAD DS Health and Performance'
+            key: 'perf_counter_en[\DirectoryServices(NTDS)\Simple Binds/sec]'

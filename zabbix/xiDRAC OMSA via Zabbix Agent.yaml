@@ -1,0 +1,544 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 08ad08f6491047718d09263a79bebfba
+      name: MT
+  templates:
+    - uuid: 2e4eff5c44fd4d88af339789d887ce8f
+      template: 'xiDRAC OMSA via Zabbix Agent'
+      name: 'xiDRAC OMSA via Zabbix Agent'
+      description: 'Monitors HDD/RAID Controllers through Dell OMSA installed on a Windows Server.'
+      groups:
+        - name: MT
+      items:
+        - uuid: 057af9c1cc0d49f8b7c86b3dd51e76bf
+          name: 'get Controller - (Raw Data)'
+          key: dell.omreport.controller
+          delay: 10m
+          value_type: TEXT
+          tags:
+            - tag: Type
+              value: HDD
+        - uuid: 92876923d4ef4d7a9c1d5d6bbf627bdf
+          name: 'get Physical Disk - (Raw Data)'
+          key: dell.omreport.pdisk.c0
+          delay: 10m
+          value_type: TEXT
+          tags:
+            - tag: Type
+              value: HDD
+        - uuid: 3d213e3eaa624c42ab8d15f7f4ad7bde
+          name: 'get Virtual Disk - (Raw Data)'
+          key: dell.omreport.vdisk.c0
+          delay: 10m
+          value_type: TEXT
+          tags:
+            - tag: Type
+              value: HDD
+      discovery_rules:
+        - uuid: 8a95a37e4cad4a11a279d16b1ca2a998
+          name: 'Discover OMSA Controllers'
+          type: DEPENDENT
+          key: omsa.ctrl.discovery
+          item_prototypes:
+            - uuid: b7ab0b63931a44ffb014857a8d6a032c
+              name: 'iDRAC: Controller {#CTRL_ID} Firmware Version'
+              type: DEPENDENT
+              key: 'omsa.ctrl.firmver[{#CTRL_ID}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var id = "{#CTRL_ID}";
+                      var lines = value.split(/\r?\n/);
+                      var inBlock = false;
+                      
+                      for (var i=0;i<lines.length;i++){
+                        var line = String(lines[i]||"").trim();
+                        if (!line) continue;
+                      
+                        if (/^Controller$/i.test(line)) { inBlock = false; continue; }
+                      
+                        var m = line.match(/^ID\s*:\s*(.*)$/i);
+                        if (m) { inBlock = (m[1].trim() === id); continue; }
+                      
+                        if (inBlock) {
+                          var kv = line.match(/^([^:]+?)\s*:\s*(.*)$/);
+                          if (kv && kv[1].trim() === "Firmware Version") return kv[2].trim();
+                        }
+                      }
+                      return "";
+              master_item:
+                key: dell.omreport.controller
+            - uuid: 33047f7c64e644d592bcc4481d6df130
+              name: 'iDRAC: Controller {#CTRL_ID} Name'
+              type: DEPENDENT
+              key: 'omsa.ctrl.name[{#CTRL_ID}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var id = "{#CTRL_ID}";
+                      var lines = value.split(/\r?\n/);
+                      var inBlock = false;
+                      
+                      for (var i=0;i<lines.length;i++){
+                        var line = String(lines[i]||"").trim();
+                        if (!line) continue;
+                      
+                        if (/^Controller$/i.test(line)) { inBlock = false; continue; }
+                      
+                        var m = line.match(/^ID\s*:\s*(.*)$/i);
+                        if (m) { inBlock = (m[1].trim() === id); continue; }
+                      
+                        if (inBlock) {
+                          var kv = line.match(/^([^:]+?)\s*:\s*(.*)$/);
+                          if (kv && kv[1].trim() === "Name") return kv[2].trim();
+                        }
+                      }
+                      return "";
+              master_item:
+                key: dell.omreport.controller
+            - uuid: f63ba466574045cfbe222b915ff87602
+              name: 'iDRAC: Controller {#CTRL_ID} State'
+              type: DEPENDENT
+              key: 'omsa.ctrl.state[{#CTRL_ID}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var id = "{#CTRL_ID}";
+                      var lines = value.split(/\r?\n/);
+                      var inBlock = false;
+                      
+                      for (var i=0;i<lines.length;i++){
+                        var line = String(lines[i]||"").trim();
+                        if (!line) continue;
+                      
+                        if (/^Controller$/i.test(line)) { inBlock = false; continue; }
+                      
+                        var m = line.match(/^ID\s*:\s*(.*)$/i);
+                        if (m) { inBlock = (m[1].trim() === id); continue; }
+                      
+                        if (inBlock) {
+                          var kv = line.match(/^([^:]+?)\s*:\s*(.*)$/);
+                          if (kv && kv[1].trim() === "State") return kv[2].trim();
+                        }
+                      }
+                      return "";
+              master_item:
+                key: dell.omreport.controller
+              trigger_prototypes:
+                - uuid: 4623b34ae69b4cb590157c2a8796f81b
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.ctrl.state[{#CTRL_ID}],#2,"eq","Failed")=2'
+                  recovery_mode: NONE
+                  name: 'iDRAC Controller {#CTRL_ID} State: Failed'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: DISASTER
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: 5fab160de6bc423ca1edb10f0b30ea92
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.ctrl.state[{#CTRL_ID}],#2,"iregexp","^(Offline|Foreign|Incompatible|Unknown|Unsupported)$")=2'
+                  recovery_mode: NONE
+                  name: 'iDRAC Controller {#CTRL_ID} State: Offline/Incompatible'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: fc4aa18bcd9c45d8ac669d8d75d26ebe
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.ctrl.state[{#CTRL_ID}],#2,"eq","Rebuild")=2'
+                  recovery_mode: NONE
+                  name: 'iDRAC Controller {#CTRL_ID} State: Rebuilding'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: INFO
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+            - uuid: 6227e3943e044981b3efd354e8f17026
+              name: 'iDRAC: Controller {#CTRL_ID} Status'
+              type: DEPENDENT
+              key: 'omsa.ctrl.status[{#CTRL_ID}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var id = "{#CTRL_ID}";
+                      var lines = value.split(/\r?\n/);
+                      var inBlock = false;
+                      
+                      for (var i=0;i<lines.length;i++){
+                        var line = String(lines[i]||"").trim();
+                        if (!line) continue;
+                      
+                        if (/^Controller$/i.test(line)) { inBlock = false; continue; }
+                      
+                        var m = line.match(/^ID\s*:\s*(.*)$/i);
+                        if (m) { inBlock = (m[1].trim() === id); continue; }
+                      
+                        if (inBlock) {
+                          var kv = line.match(/^([^:]+?)\s*:\s*(.*)$/);
+                          if (kv && kv[1].trim() === "Status") return kv[2].trim();
+                        }
+                      }
+                      return "";
+              master_item:
+                key: dell.omreport.controller
+              trigger_prototypes:
+                - uuid: 98f9eebafbb54b1cbbddf58dd39f92c4
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.ctrl.status[{#CTRL_ID}],#2,"iregexp","(?i)^(Degraded|SMART Alert Detected)$")=2'
+                  recovery_mode: NONE
+                  name: 'iDRAC Controller {#CTRL_ID} State: Degraded / SMART Alert'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: WARNING
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: f43ac7ed38954971b2fb44182353a2ff
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.ctrl.status[{#CTRL_ID}],#2,"eq","Critical")=2'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.ctrl.status[{#CTRL_ID}],#3,"eq","Ok")=3'
+                  name: 'iDRAC Controller {#CTRL_ID} Status: CRITICAL'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: b352eb10090845f2b3eacf8470fcb1fe
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.ctrl.status[{#CTRL_ID}],#1,"iregexp","^(Non-?Recoverable|Fatal|Failure|Error)$")=1'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.ctrl.status[{#CTRL_ID}],#3,"eq","Ok")=3'
+                  name: 'iDRAC Controller {#CTRL_ID} Status: NON-RECOVERABLE'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: DISASTER
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: 4af545cc52be4a2db5326b5baf63e452
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.ctrl.status[{#CTRL_ID}],#2,"eq","Non-Critical")=2'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.ctrl.status[{#CTRL_ID}],#3,"eq","Ok")=3'
+                  name: 'iDRAC Controller {#CTRL_ID} Status: Warning/Non-critical'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: WARNING
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+          master_item:
+            key: dell.omreport.controller
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var raw = value;
+                  var lines = raw.split(/\r?\n/);
+                  
+                  var data = [];
+                  var cur = null;
+                  
+                  function pushCur() {
+                    if (cur && cur["{#CTRL_ID}"]) data.push(cur);
+                    cur = null;
+                  }
+                  
+                  for (var i = 0; i < lines.length; i++) {
+                    var line = String(lines[i] || "").trim();
+                    if (!line) { pushCur(); continue; }
+                  
+                    // Start of controller block
+                    if (line.match(/^Controller$/i)) {
+                      pushCur();
+                      cur = {};
+                      continue;
+                    }
+                  
+                    // Key: Value
+                    var kv = line.match(/^([^:]+?)\s*:\s*(.*)$/);
+                    if (kv && cur) {
+                      var k = kv[1].trim();
+                      var v = kv[2].trim();
+                      if (k === "ID")      cur["{#CTRL_ID}"]     = v;        // 0, 1, …
+                      if (k === "Name")    cur["{#CTRL_NAME}"]   = v;        // PERC H755 / BOSS-S2
+                      if (k === "Status")  cur["{#CTRL_STATUS}"] = v;        // Ok / Degraded
+                      if (k === "State")   cur["{#CTRL_STATE}"]  = v;        // Ready / Failed
+                    }
+                  }
+                  pushCur();
+                  
+                  return JSON.stringify({ data: data });
+        - uuid: 7aebbf00e0ae4650a65559b0b0048769
+          name: 'Discover OMSA Physical Disks'
+          type: DEPENDENT
+          key: omsa.pdisk.discovery
+          item_prototypes:
+            - uuid: b60b0d3866dd40bfaf07529eb0adc677
+              name: 'iDRAC: Physical Disk {#PDISK_ID} State'
+              type: DEPENDENT
+              key: 'omsa.pdisk.state[{#PDISK_ID}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var id = "{#PDISK_ID}";
+                      var lines = value.split(/\r?\n/);
+                      var inBlock = false;
+                      
+                      for (var i = 0; i < lines.length; i++) {
+                        var line = String(lines[i] || "").trim();
+                        if (!line) { inBlock = false; continue; }
+                      
+                        // detect start of block
+                        var mID = line.match(/^ID\s*:\s*(\S+)/i);
+                        if (mID) { 
+                          inBlock = (mID[1] === id); 
+                          continue; 
+                        }
+                      
+                        // inside right block → grab State
+                        if (inBlock) {
+                          var kv = line.match(/^([^:]+?)\s*:\s*(.*)$/);
+                          if (kv && kv[1].trim() === "State") {
+                            return kv[2].trim();   // e.g. "Online"
+                          }
+                        }
+                      }
+                      return "";
+              master_item:
+                key: dell.omreport.pdisk.c0
+              trigger_prototypes:
+                - uuid: 427b395454e04b9fbf74615287bf77af
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.pdisk.state[{#PDISK_ID}],#2,"iregexp","(?i)^(Degraded|SMART Alert Detected)$")=2'
+                  recovery_mode: NONE
+                  name: 'PDISK {#PDISK_ID} State: Degraded / SMART Alert'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: WARNING
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: 9329df0262b74151885baba289d4f5dc
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.pdisk.state[{#PDISK_ID}],#2,"eq","Failed")=2'
+                  recovery_mode: NONE
+                  name: 'PDISK {#PDISK_ID} State: Failed'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: DISASTER
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: ca5f5ead65c04e5986de9e49b9c455e0
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.pdisk.state[{#PDISK_ID}],#2,"iregexp","^(Offline|Foreign|Incompatible|Unknown|Unsupported)$")=2'
+                  recovery_mode: NONE
+                  name: 'PDISK {#PDISK_ID} State: Offline/Incompatible'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: 3eab7bee5c87434583d3e912b832a0a2
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.pdisk.state[{#PDISK_ID}],#2,"eq","Rebuild")=2'
+                  recovery_mode: NONE
+                  name: 'PDISK {#PDISK_ID} State: Rebuilding'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: INFO
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+            - uuid: ef0bc4c586cd4dd9a0d86493ffde6deb
+              name: 'iDRAC: Physical Disk {#PDISK_ID} Status'
+              type: DEPENDENT
+              key: 'omsa.pdisk.status[{#PDISK_ID}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var id = "{#PDISK_ID}";
+                      var lines = value.split(/\r?\n/);
+                      var inBlock = false;
+                      
+                      for (var i=0;i<lines.length;i++){
+                        var line = String(lines[i]||"").trim();
+                        if (!line) { inBlock = false; continue; }
+                        var mID = line.match(/^ID\s*:\s*(\S+)/i);
+                        if (mID){ inBlock = (mID[1] === id); continue; }
+                        if (inBlock){
+                          var kv = line.match(/^([^:]+?)\s*:\s*(.*)$/);
+                          if (kv && kv[1].trim() === "Status") return kv[2].trim();
+                        }
+                      }
+                      return "";
+              master_item:
+                key: dell.omreport.pdisk.c0
+              trigger_prototypes:
+                - uuid: c4912f94c9774df3800c9bfdd4a40a22
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.pdisk.status[{#PDISK_ID}],#2,"eq","Critical")=2'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.pdisk.status[{#PDISK_ID}],#3,"eq","Ok")=3'
+                  name: 'PDISK {#PDISK_ID} Status: CRITICAL'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: HIGH
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: ac771b2a112a4670b8c3df92c55f816c
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.pdisk.status[{#PDISK_ID}],#1,"iregexp","^(Non-?Recoverable|Fatal|Failure|Error)$")=1'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.pdisk.status[{#PDISK_ID}],#3,"eq","Ok")=3'
+                  name: 'PDISK {#PDISK_ID} Status: NON-RECOVERABLE'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: DISASTER
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+                - uuid: f04598bcfdb34c45acb01cfab5b905cc
+                  expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.pdisk.status[{#PDISK_ID}],#2,"eq","Non-Critical")=2'
+                  recovery_mode: RECOVERY_EXPRESSION
+                  recovery_expression: 'count(/xiDRAC OMSA via Zabbix Agent/omsa.pdisk.status[{#PDISK_ID}],#3,"eq","Ok")=3'
+                  name: 'PDISK {#PDISK_ID} Status: Warning/Non-critical'
+                  opdata: '{ITEM.LASTVALUE}'
+                  priority: WARNING
+                  dependencies:
+                    - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                      expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+          master_item:
+            key: dell.omreport.pdisk.c0
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var raw = value;
+                  var lines = raw.split(/\r?\n/);
+                  
+                  function toBytes(s) {
+                    var m = String(s || "").match(/\((\d+)\s*bytes\)/i);
+                    return m ? m[1] : "";
+                  }
+                  
+                  var data = [];
+                  var cur = null;
+                  
+                  function pushCur() {
+                    if (cur && cur["{#PDISK_ID}"]) data.push(cur);
+                    cur = null;
+                  }
+                  
+                  for (var i = 0; i < lines.length; i++) {
+                    var line = String(lines[i] || "").trim();
+                    if (!line) { pushCur(); continue; }
+                  
+                    // Start of a new disk when we see "ID : x:x:x"
+                    var mID = line.match(/^ID\s*:\s*(\S+)/i);
+                    if (mID) {
+                      pushCur();
+                      cur = {};
+                      cur["{#PDISK_ID}"] = mID[1];                            // e.g. 0:1:0
+                      continue;
+                    }
+                  
+                    // key : value
+                    var kv = line.match(/^([^:]+?)\s*:\s*(.*)$/);
+                    if (kv && cur) {
+                      var k = kv[1].trim();
+                      var v = kv[2].trim();
+                  
+                      if (k === "Name")                  cur["{#PDISK_NAME}"]   = v;                 // Physical Disk 0:1:0
+                      else if (k === "Status")           cur["{#PDISK_STATUS}"] = v;                 // Ok / Degraded / Failed
+                      else if (k === "State")            cur["{#PDISK_STATE}"]  = v;                 // Online / Rebuild / etc.
+                      else if (k === "Media")            cur["{#PDISK_MEDIA}"]  = v;                 // HDD / SSD
+                      else if (k === "Bus Protocol")     cur["{#PDISK_BUS}"]    = v;                 // SAS / SATA / NVMe
+                      else if (k === "Product ID")       cur["{#PDISK_MODEL}"]  = v;                 // AL15SEB24EQY
+                      else if (k === "Serial No.")       cur["{#PDISK_SERIAL}"] = v;                 // 45F0A01LFQYF
+                      else if (k === "WWN")              cur["{#PDISK_WWN}"]    = v;
+                      else if (k === "SAS Address")      cur["{#PDISK_SAS}"]    = v;
+                      else if (k === "Negotiated Speed") cur["{#PDISK_SPEED}"]  = v;                 // 12.00 Gbps
+                      else if (k === "Failure Predicted")cur["{#PDISK_PFAIL}"]  = v;                 // Yes/No
+                      else if (k === "Capacity")         cur["{#PDISK_CAPB}"]   = toBytes(v);        // numeric bytes (string)
+                    }
+                  }
+                  pushCur();
+                  
+                  return JSON.stringify({ data: data });
+        - uuid: d1d0a618b2ec4e17b6bb139a4ca7f568
+          name: 'Discover OMSA Virtual Disks'
+          type: DEPENDENT
+          key: omsa.vdisk.discovery
+          item_prototypes:
+            - uuid: 09065cd9b7b746f78526cbefe9b6ca3f
+              name: 'VDisk {#VDISK_ID} Status'
+              type: DEPENDENT
+              key: 'omsa.vdisk.status[{#VDISK_ID}]'
+              value_type: TEXT
+              preprocessing:
+                - type: JAVASCRIPT
+                  parameters:
+                    - |
+                      var id = "{#VDISK_ID}";
+                      var lines = value.split(/\r?\n/);
+                      var cur = null;
+                      
+                      for (var i = 0; i < lines.length; i++) {
+                        var line = String(lines[i] || "").trim();
+                      
+                        // detect start of Virtual Disk block
+                        var mHead = line.match(/^Virtual\s+Disk\s+(\d+)/i);
+                        if (mHead) {
+                          cur = (mHead[1] === id) ? {} : null;
+                          continue;
+                        }
+                      
+                        // parse key:value only inside correct block
+                        if (cur !== null) {
+                          var mKV = line.match(/^([^:]+?)\s*:\s*(.*)$/);
+                          if (mKV && mKV[1].trim() === "Status") {
+                            return mKV[2].trim();
+                          }
+                        }
+                      }
+                      return "";
+              master_item:
+                key: dell.omreport.vdisk.c0
+          master_item:
+            key: dell.omreport.vdisk.c0
+          preprocessing:
+            - type: JAVASCRIPT
+              parameters:
+                - |
+                  var raw = value;
+                  var lines = raw.split(/\r?\n/);
+                  var blocks = [];
+                  var cur = null;
+                  
+                  for (var i = 0; i < lines.length; i++) {
+                    var line = String(lines[i] || "").trim();
+                    if (!line) continue;
+                  
+                    // Start of a new Virtual Disk block
+                    var mHead = line.match(/^Virtual\s+Disk\s+(\d+)/i);
+                    if (mHead) {
+                      if (cur) blocks.push(cur);   // save previous disk
+                      cur = {};
+                      cur["{#VDISK_ID}"] = mHead[1];
+                      continue;
+                    }
+                  
+                    // Key : Value
+                    var mKV = line.match(/^([^:]+?)\s*:\s*(.*)$/);
+                    if (mKV && cur) {
+                      var k = mKV[1].trim();
+                      var v = mKV[2].trim();
+                      if (k === "Name")   cur["{#VDISK_NAME}"]   = v;
+                      if (k === "Status") cur["{#VDISK_STATUS}"] = v;
+                      if (k === "State")  cur["{#VDISK_STATE}"]  = v;
+                    }
+                  }
+                  if (cur) blocks.push(cur);
+                  
+                  return JSON.stringify({ data: blocks });
+      tags:
+        - tag: Device
+          value: iDRAC

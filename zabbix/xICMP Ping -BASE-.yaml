@@ -1,0 +1,143 @@
+zabbix_export:
+  version: '7.4'
+  template_groups:
+    - uuid: 08ad08f6491047718d09263a79bebfba
+      name: MT
+    - uuid: 36bff6c29af64692839d077febfc7079
+      name: 'Templates/Network devices'
+  templates:
+    - uuid: 65ca04e763a2437197437b3d9f58e4d7
+      template: 'xICMP Ping -BASE-'
+      name: 'xICMP Ping -BASE-'
+      description: |
+        **NOTE
+        
+        Host name = IP Address
+        Use the 'visible name' box for representation.
+        
+        This template has a macro to grab the value of the host name and use it for an ICMP item, allowing for an interface-free monitor.
+        
+        ~mikeofree
+      readme: |
+        ## Setup
+        
+        Set `Threshold of ICMP packet loss` and `Threshold of the average ICMP response`
+      groups:
+        - name: MT
+        - name: 'Templates/Network devices'
+      items:
+        - uuid: f0464eaa9e3241b3b9e0f53561780e0f
+          name: 'ICMP loss'
+          type: SIMPLE
+          key: 'icmppingloss[{HOST.HOST}]'
+          value_type: FLOAT
+          units: '%'
+          description: 'The percentage of lost packets.'
+          tags:
+            - tag: component
+              value: health
+            - tag: component
+              value: network
+          triggers:
+            - uuid: b2afa7c1193a42d2af975fe0d68e9abf
+              expression: 'min(/xICMP Ping -BASE-/icmppingloss[{HOST.HOST}],5m)>{$ICMP_LOSS_WARN} and min(/xICMP Ping -BASE-/icmppingloss[{HOST.HOST}],5m)<100'
+              name: 'ICMP Ping: High Ping Loss'
+              opdata: 'Loss: {ITEM.LASTVALUE1}'
+              status: DISABLED
+              priority: WARNING
+              description: 'ICMP packets loss detected.'
+              dependencies:
+                - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                  expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+              tags:
+                - tag: scope
+                  value: availability
+                - tag: scope
+                  value: performance
+        - uuid: 3298568c352b46abb5ccd2eceae944c2
+          name: 'ICMP response time'
+          type: SIMPLE
+          key: 'icmppingsec[{HOST.HOST}]'
+          value_type: FLOAT
+          units: s
+          description: 'The ICMP ping response time (in seconds).'
+          tags:
+            - tag: component
+              value: health
+            - tag: component
+              value: network
+          triggers:
+            - uuid: 32aeed7f413746cf936f62a3a464c1ef
+              expression: 'avg(/xICMP Ping -BASE-/icmppingsec[{HOST.HOST}],5m)>{$ICMP_RESPONSE_TIME_WARN}'
+              name: 'ICMP Ping: High Ping Response Time'
+              opdata: 'Value: {ITEM.LASTVALUE1}'
+              status: DISABLED
+              priority: WARNING
+              description: 'Average ICMP response time is too high.'
+              dependencies:
+                - name: 'ICMP Ping: High Ping Loss'
+                  expression: 'min(/xICMP Ping -BASE-/icmppingloss[{HOST.HOST}],5m)>{$ICMP_LOSS_WARN} and min(/xICMP Ping -BASE-/icmppingloss[{HOST.HOST}],5m)<100'
+                - name: 'ICMP Ping: Unavailable by ICMP Ping!'
+                  expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+              tags:
+                - tag: scope
+                  value: availability
+                - tag: scope
+                  value: performance
+        - uuid: 4c96ed28b284422fb34bdbcf72ead900
+          name: 'ICMP ping'
+          type: SIMPLE
+          key: 'icmpping[{HOST.HOST}]'
+          description: |
+            The host accessibility by ICMP ping.
+            
+            0 - ICMP ping fails;
+            1 - ICMP ping successful.
+          valuemap:
+            name: 'Service state'
+          tags:
+            - tag: component
+              value: health
+            - tag: component
+              value: network
+          triggers:
+            - uuid: 3a3d788d4f164370970ee8ab7ec29229
+              expression: 'max(/xICMP Ping -BASE-/icmpping[{HOST.HOST}],#3)=0'
+              name: 'ICMP Ping: Unavailable by ICMP Ping!'
+              priority: DISASTER
+              description: 'Last three attempts returned timeout. Please check device connectivity.'
+              tags:
+                - tag: scope
+                  value: availability
+      tags:
+        - tag: target
+          value: icmp
+      macros:
+        - macro: '{$ICMP_LOSS_WARN}'
+          value: '20'
+          description: 'Warning threshold of ICMP packet loss in %.'
+          config:
+            type: TEXT
+            priority: '1'
+            section_name: Thresholds
+            label: 'Threshold of ICMP packet loss'
+            description: 'Warning threshold of ICMP packet loss in %. In the range from 0 to 100 inclusive.'
+            regex: '^-?([0-9]+|(([0-9]+)\.([0-9]+)))$'
+        - macro: '{$ICMP_RESPONSE_TIME_WARN}'
+          value: '0.15'
+          description: 'Warning threshold of the average ICMP response time in seconds.'
+          config:
+            type: TEXT
+            priority: '2'
+            section_name: Thresholds
+            label: 'Threshold of the average ICMP response'
+            description: 'Warning threshold of the average ICMP response time in seconds. No less than 0.'
+            regex: '^-?([0-9]+|(([0-9]+)\.([0-9]+)))$'
+      valuemaps:
+        - uuid: fdf33411a85c4e1fa821706d8967e05b
+          name: 'Service state'
+          mappings:
+            - value: '0'
+              newvalue: Down
+            - value: '1'
+              newvalue: Up
